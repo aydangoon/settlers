@@ -3,6 +3,7 @@
  * @module
  */
 
+export const NUM_RESOURCE_TYPES: number = 5
 export const NUM_PLAYERS: number = 4
 export const NUM_SETTLEMENTS: number = 5
 export const NUM_CITIES: number = 4

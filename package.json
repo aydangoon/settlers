@@ -9,9 +9,10 @@
   "main": "build/index.js",
   "scripts": {
     "start": "npm run build && node build/src/index.js",
+    "test": "mocha build/tst",
+    "btest": "npm run build && npm run test",
     "build": "rm -rf ./build/ && tsc",
-    "docs": "typedoc && open doc/index.html",
-    "test": "mocha build/tst"
+    "docs": "typedoc && open doc/index.html"
   },
   "author": "aydang",
   "devDependencies": {
