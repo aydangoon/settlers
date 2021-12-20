@@ -57,3 +57,30 @@ describe('trade()', () => {
     assert.strictEqual(offerer.get(Resource.Grain), 2)
   })
 })
+
+describe('removeAll()', () => {
+  it('should have no grain', () => {
+    const b = new ResourceBundle(4)
+    const amnt = b.removeAll(Resource.Grain)
+    assert.strictEqual(amnt, 4)
+    assert.strictEqual(b.get(Resource.Grain), 0)
+  })
+})
+
+describe('removeOneAtRandom()', () => {
+  it('should always remove lumber', () => {
+    const b = new ResourceBundle([0, 2, 0, 0, 0])
+    assert.strictEqual(b.removeOneAtRandom(), Resource.Lumber)
+    assert.strictEqual(b.removeOneAtRandom(), Resource.Lumber)
+    assert.strictEqual(b.isEmpty(), true)
+  })
+  it('should be empty after all removes', () => {
+    const b = new ResourceBundle([0, 1, 0, 1, 1])
+    b.removeOneAtRandom()
+    assert.strictEqual(b.size(), 2)
+    b.removeOneAtRandom()
+    assert.strictEqual(b.size(), 1)
+    b.removeOneAtRandom()
+    assert.strictEqual(b.isEmpty(), true)
+  })
+})

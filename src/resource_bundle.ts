@@ -1,5 +1,6 @@
 import Resource from './resource'
 import { NUM_RESOURCE_TYPES } from './constants'
+import { weightedRandom } from './utils'
 
 /**
  * A collection of resources.
@@ -100,11 +101,40 @@ export class ResourceBundle {
   }
 
   /**
+   * Get the amount of Resource `resource` held by the bundle and set it to 0.
+   * @param resource The resource we want to take.
+   * @returns The amount of `resource` the bundle had.
+   */
+  public removeAll(resource: Resource) {
+    const temp = this.bundle[resource]
+    this.bundle[resource] = 0
+    return temp
+  }
+
+  /**
+   * Remove one resource from the bundle at random.
+   * @returns The resource that was randomly removed.
+   */
+  public removeOneAtRandom() {
+    const resToRemove = weightedRandom(this.bundle) as Resource
+    this.bundle[resToRemove]--
+    return resToRemove
+  }
+
+  /**
+   *
+   * @returns The number of resources in the bundle.
+   */
+  public size() {
+    return this.bundle.reduce((acc, curr) => acc + curr)
+  }
+
+  /**
    *
    * @returns A boolean indicating if the bundle has no resources.
    */
   public isEmpty() {
-    return this.bundle.reduce((acc, curr) => acc + curr) == 0
+    return this.size() === 0
   }
 }
 
