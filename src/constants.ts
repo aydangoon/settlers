@@ -20,3 +20,9 @@ export const RES_PER_CITY: number = 2
 
 export const MIN_LONGEST_ROAD: number = 5
 export const MIN_LARGEST_ARMY: number = 3
+
+/**
+ * If you have more than `ROBBER_LIMIT` cards when a 7 is rolled, you must
+ * discard half your cards.
+ */
+export const ROBBER_LIMIT: number = 7
