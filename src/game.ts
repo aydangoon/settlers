@@ -4,12 +4,21 @@
  * @module
  */
 
-import { NUM_EACH_RESOURCE, NUM_PLAYERS } from './constants'
+import {
+  NUM_EACH_RESOURCE,
+  NUM_KNIGHTS,
+  NUM_VPS,
+  NUM_MONOPOLY,
+  NUM_PLAYERS,
+  NUM_ROAD_BUILDING,
+  NUM_YEAR_OF_PLENTY,
+} from './constants'
 import Player from './player'
 import ResourceBundle from './resource_bundle'
 import Action, { ActionType, RollPayload } from './action'
 import isValidTransition, { TurnState } from './turn_fsm'
 import { rollDie } from './utils'
+import DevCardBundle from './dev_card_bundle'
 
 /**
  * Enum of game phases.
@@ -24,6 +33,8 @@ export enum GamePhase {
 export class Game {
   /** A resource bundle for the bank. */
   private bank: ResourceBundle
+  /** The dev card deck. */
+  private deck: DevCardBundle
   /** The current turn number takes on a value of: [0, NUM_PLAYERS] */
   private turn: number
   /** List of player objects. Indexable by player number. */
@@ -40,6 +51,13 @@ export class Game {
 
   constructor() {
     this.bank = new ResourceBundle(NUM_EACH_RESOURCE)
+    this.deck = new DevCardBundle([
+      NUM_KNIGHTS,
+      NUM_VPS,
+      NUM_YEAR_OF_PLENTY,
+      NUM_MONOPOLY,
+      NUM_ROAD_BUILDING,
+    ])
     this.turn = 0
     this.players = new Array(NUM_PLAYERS).fill(new Player())
     this.freeRoads = 0
