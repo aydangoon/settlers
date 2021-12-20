@@ -3,7 +3,7 @@ import Resource from './resource'
 /**
  * A collection of resources.
  */
-class ResourceBundle {
+export class ResourceBundle {
   private bundle: [number, number, number, number, number]
   constructor(amnt: number = 0) {
     this.bundle = [amnt, amnt, amnt, amnt, amnt]
@@ -16,6 +16,16 @@ class ResourceBundle {
    */
   public get(resource: Resource) {
     return this.bundle[resource]
+  }
+
+  /**
+   *
+   * @param bundle The bundle we wish to add to this bundle. It is unchanged.
+   */
+  public add(bundle: ResourceBundle) {
+    for (let i = 0; i < 5; i++) {
+      this.bundle[i] += bundle.get(i)
+    }
   }
 }
 
