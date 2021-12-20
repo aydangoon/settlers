@@ -18,3 +18,9 @@ export const weightedRandom = (weights: number[]) => {
   }
   return -1
 }
+
+/**
+ * Roll a die.
+ * @returns A uniform int on [1, 6]
+ */
+export const rollDie = () => Math.floor(Math.random() * 6) + 1
