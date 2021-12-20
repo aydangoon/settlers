@@ -30,10 +30,17 @@ export enum ActionType {
   MakeTradeOffer,
   DecideOnTradeOffer,
 
+  DrawDevelopmentCard,
+
   EndTurn,
 }
 
 export interface ActionPayload {}
+
+export interface RollPayload extends ActionPayload {
+  /** the value of the dice sum. */
+  value: number
+}
 
 export interface MoveRobberPayload extends ActionPayload {
   /** The tile number we want to move the robber to. */

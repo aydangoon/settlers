@@ -1,10 +1,9 @@
 import assert from 'assert'
 import Action, { ActionType } from '../src/action'
-import { RollEvent } from '../src/event'
 import Game from '../src/game'
 import { TurnState } from '../src/turn_fsm'
 
-describe('handle roll event', () => {
+describe('handle roll action', () => {
   const game: any = new Game()
   let turn: number = 0
 
@@ -20,8 +19,8 @@ describe('handle roll event', () => {
   it('handleAction(<roll action>, 0) returns a roll event', () => {
     const e = (<Game>game).handleAction(new Action(ActionType.Roll), turn)
     assert.notStrictEqual(e, null)
-    assert.strictEqual(e instanceof RollEvent, true)
-    assert.strictEqual(e!.action.type, ActionType.Roll)
+    assert.strictEqual(e instanceof Action, true)
+    assert.strictEqual(e!.type, ActionType.Roll)
     assert.strictEqual(game.turnState, TurnState.Postroll)
   })
 })

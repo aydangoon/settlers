@@ -7,8 +7,7 @@
 import { NUM_EACH_RESOURCE, NUM_PLAYERS } from './constants'
 import Player from './player'
 import ResourceBundle from './resource_bundle'
-import Action, { ActionType } from './action'
-import Event, { RollEvent } from './event'
+import Action, { ActionType, RollPayload } from './action'
 import isValidTransition, { TurnState } from './turn_fsm'
 import { rollDie } from './utils'
 
@@ -33,6 +32,8 @@ export class Game {
   private phase: GamePhase
   /** The current turn's state, i.e. Postroll, preroll, etc. */
   private turnState: TurnState
+  /** The number of roads the current turn's player can place for no cost. */
+  private freeRoads: number
 
   // Some variables needed only for the setup phase.
   private setup_settlementPlaced: boolean
@@ -41,6 +42,7 @@ export class Game {
     this.bank = new ResourceBundle(NUM_EACH_RESOURCE)
     this.turn = 0
     this.players = new Array(NUM_PLAYERS).fill(new Player())
+    this.freeRoads = 0
 
     // TODO board initialization, shuffle development cards, ports, etc.
 
@@ -56,13 +58,19 @@ export class Game {
 
   // ============================ do_ helper methods ============================
 
-  // do_ prefixed functions are helpers to handle their respective events.
+  // do_ prefixed functions are helpers to handle their respective actions.
 
-  private do_roll(event: RollEvent) {
-    // TODO hand out resources based on event.value
+  private do_roll(action: Action) {
+    // TODO: all the roll logic.
 
     // Update turn state.
     this.turnState = TurnState.Postroll
+  }
+
+  private do_endTurn(action: Action) {
+    this.freeRoads = 0
+    this.turn = (this.turn + 1) % NUM_PLAYERS
+    this.turnState = TurnState.Preroll
   }
 
   /**
@@ -96,51 +104,39 @@ export class Game {
     }
   }
 
-  /**
-   * Get a deterministic, atomic event from an action.
-   * @param action
-   * @returns An event generated from the action `action`
-   */
-  private generateEventFrom(action: Action): Event {
-    switch (action.type) {
-      case ActionType.Roll:
-        const value = rollDie() + rollDie()
-        return new RollEvent(value, action)
-      default:
-        return new Event(action)
-    }
-  }
-
   // ============================ Public Interface ============================
 
   /**
-   * Check if an action is valid, generate an event from it, and do that event.
+   * Check if an action is valid, then do the action.
    * @param action The action to be handled.
    * @param requester Player number who requested the action.
-   * @returns `null` if `action` is invalid, the generated event otherwise.
+   * @returns `null` if `action` is invalid, the completed, valid action otherwise.
    */
-  public handleAction(action: Action, requester: number): null | Event {
+  public handleAction(action: Action, requester: number): null | Action {
     // Determine if the action can be done given current game state.
     if (!this.isValid(action, requester)) return null
 
-    // Generate an event from the valid action.
-    const event = this.generateEventFrom(action)
+    // The two edge cases where we need to update our action's payload due
+    // to randomness
+    if (action.type === ActionType.Roll) {
+      const payload = <RollPayload>action.payload
+      payload.value = rollDie() + rollDie()
+    } else if (action.type === ActionType.DrawDevelopmentCard) {
+      // TODO
+    }
 
-    // update internal state based on this event.
-    this.doEvent(event)
+    // update internal state based on this action.
+    this.doAction(action)
 
-    // return the event.
-    return event
+    // return the completed, valid action.
+    return action
   }
 
-  /**
-   * Do an event. This function is **agnostic** of game state and will simply
-   * attempt to apply the specified event to the game.
-   * @param event The event to be done.
-   */
-  public doEvent(event: Event): void {
-    if (event.action.type === ActionType.Roll) {
-      this.do_roll(<RollEvent>event)
+  public doAction(action: Action): void {
+    if (action.type === ActionType.Roll) {
+      this.do_roll(action)
+    } else if (action.type === ActionType.EndTurn) {
+      this.do_endTurn(action)
     }
   }
 }
