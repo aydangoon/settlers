@@ -107,7 +107,7 @@ export class Game {
   // ============================ Public Interface ============================
 
   /**
-   * Check if an action is valid, then do the action.
+   * Check if an action is valid, make action deterministic (edge cases), then do the action.
    * @param action The action to be handled.
    * @param requester Player number who requested the action.
    * @returns `null` if `action` is invalid, the completed, valid action otherwise.
@@ -132,6 +132,10 @@ export class Game {
     return action
   }
 
+  /**
+   *
+   * @param action
+   */
   public doAction(action: Action): void {
     if (action.type === ActionType.Roll) {
       this.do_roll(action)
