@@ -1,0 +1,16 @@
+{
+  "name": "settlers",
+  "version": "1.0.0",
+  "description": "core logic for a settlers game instance",
+  "main": "build/index.js",
+  "scripts": {
+    "start": "tsc && node build/index.js",
+    "docs": "typedoc && open ./doc/index.html"
+  },
+  "author": "aydang",
+  "devDependencies": {
+    "prettier": "^2.5.1",
+    "typedoc": "^0.22.10",
+    "typescript": "^4.5.4"
+  }
+}
