@@ -19,6 +19,7 @@ import Action, { ActionType, RollPayload } from './action'
 import isValidTransition, { TurnState } from './turn_fsm'
 import { rollDie } from './utils'
 import DevCardBundle from './dev_card_bundle'
+import Board from './board/board'
 
 /**
  * Enum of game phases.
@@ -35,6 +36,8 @@ export class Game {
   private bank: ResourceBundle
   /** The dev card deck. */
   private deck: DevCardBundle
+  /** The board. */
+  private board: Board
   /** The current turn number takes on a value of: [0, NUM_PLAYERS] */
   private turn: number
   /** List of player objects. Indexable by player number. */
@@ -58,11 +61,10 @@ export class Game {
       NUM_MONOPOLY,
       NUM_ROAD_BUILDING,
     ])
+    this.board = new Board()
     this.turn = 0
     this.players = [...Array(NUM_PLAYERS)].map(() => new Player())
     this.freeRoads = 0
-
-    // TODO board initialization, shuffle development cards, ports, etc.
 
     this.phase = GamePhase.SetupForward
     this.setup_settlementPlaced = false
@@ -72,11 +74,12 @@ export class Game {
   // ============================ can_ helper methods ==========================
 
   // can_ prefixed functions are helpers to check if an action is allowed given
-  // game's state.
+  // game's state. These **dont** change game state.
 
   // ============================ do_ helper methods ============================
 
-  // do_ prefixed functions are helpers to handle their respective actions.
+  // do_ prefixed functions are helpers to actually do their respective actions.
+  // these **change** game state.
 
   private do_roll(action: Action) {
     // TODO: all the roll logic.
@@ -97,7 +100,7 @@ export class Game {
    * @param requester The player number who requested the action
    * @returns Boolean indicating if the action is valid.
    */
-  private isValid(action: Action, requester: number): boolean {
+  private isValidAction(action: Action, requester: number): boolean {
     // Is this action restricted only to the player of the current turn?
     if (
       requester != this.turn &&
@@ -122,6 +125,14 @@ export class Game {
     }
   }
 
+  private doAction(action: Action): void {
+    if (action.type === ActionType.Roll) {
+      this.do_roll(action)
+    } else if (action.type === ActionType.EndTurn) {
+      this.do_endTurn(action)
+    }
+  }
+
   // ============================ Public Interface ============================
 
   /**
@@ -132,34 +143,24 @@ export class Game {
    */
   public handleAction(action: Action, requester: number): null | Action {
     // Determine if the action can be done given current game state.
-    if (!this.isValid(action, requester)) return null
+    if (!this.isValidAction(action, requester)) return null
 
     // The two edge cases where we need to update our action's payload due
     // to randomness
     if (action.type === ActionType.Roll) {
       const payload = <RollPayload>action.payload
-      payload.value = rollDie() + rollDie()
+      if (payload.value === undefined) {
+        payload.value = rollDie() + rollDie()
+      }
     } else if (action.type === ActionType.DrawDevelopmentCard) {
       // TODO
     }
 
-    // update internal state based on this action.
+    // Safely update internal state based on the validated action.
     this.doAction(action)
 
     // return the completed, valid action.
     return action
-  }
-
-  /**
-   *
-   * @param action
-   */
-  public doAction(action: Action): void {
-    if (action.type === ActionType.Roll) {
-      this.do_roll(action)
-    } else if (action.type === ActionType.EndTurn) {
-      this.do_endTurn(action)
-    }
   }
 }
 

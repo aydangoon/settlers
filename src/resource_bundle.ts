@@ -37,6 +37,17 @@ export class ResourceBundle {
   }
 
   /**
+   * Determine if `bundle` is a subset of this bundle.
+   * @param bundle
+   * @returns boolean indicating if `bundle` is a subset.
+   */
+  public has(bundle: ResourceBundle): boolean {
+    for (let i = 0; i < NUM_RESOURCE_TYPES; i++) {
+      if (this.bundle[i] < bundle.get(i)) return false
+    }
+    return true
+  }
+  /**
    *
    * @param resource The resource we want the amount of.
    * @returns The number of resource `resource` in the bundle.
@@ -136,6 +147,11 @@ export class ResourceBundle {
   public isEmpty() {
     return this.size() === 0
   }
+
+  public static roadCost = new ResourceBundle([1, 1, 0, 0, 0])
+  public static settlementCost = new ResourceBundle([1, 1, 0, 1, 1])
+  public static cityCost = new ResourceBundle([0, 0, 3, 2, 0])
+  public static devCardCost = new ResourceBundle([0, 0, 1, 1, 1])
 }
 
 export default ResourceBundle

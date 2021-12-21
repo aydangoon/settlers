@@ -84,3 +84,14 @@ describe('removeOneAtRandom()', () => {
     assert.strictEqual(b.isEmpty(), true)
   })
 })
+
+describe('has()', () => {
+  it('can buy 2 dev cards', () => {
+    const b = new ResourceBundle([0, 2, 2, 3, 2])
+    assert.strictEqual(b.has(ResourceBundle.devCardCost), true)
+    b.subtract(ResourceBundle.devCardCost)
+    assert.strictEqual(b.has(ResourceBundle.devCardCost), true)
+    b.subtract(ResourceBundle.devCardCost)
+    assert.strictEqual(b.has(ResourceBundle.devCardCost), false)
+  })
+})
