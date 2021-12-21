@@ -7,6 +7,7 @@ export enum Resource {
   Ore,
   Grain,
   Wool,
+  None,
 }
 
 export default Resource

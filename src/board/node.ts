@@ -9,11 +9,7 @@ export class Node {
   /** If the node has a city. */
   private city: boolean = false
   /** The node's port or null if none. Set at initialization. */
-  private port: Port | null
-
-  constructor(port: Port | null = null) {
-    this.port = port
-  }
+  private port: Port | null = null
 
   /**
    * Convenience method to check if node is empty.
@@ -41,7 +37,7 @@ export class Node {
    * Build a settlement on this node.
    * @param player The settlement's player number.
    */
-  public buildSettlement(player: number) {
+  public buildSettlement(player: number): void {
     if (this.player !== -1) return
     this.player = player
   }
@@ -49,9 +45,18 @@ export class Node {
   /**
    * Upgrade a settlement to a city on this node.
    */
-  public buildCity() {
+  public buildCity(): void {
     if (this.player === -1) return
     this.city = true
+  }
+
+  /**
+   * Set the port. Can only be done once.
+   * @param port The port to set.
+   */
+  public setPort(port: Port): void {
+    if (this.port !== null) return
+    this.port = port
   }
 }
 

@@ -1,5 +1,7 @@
 import assert, { strict, strictEqual } from 'assert'
 import Node from '../../src/board/node'
+import Port from '../../src/board/port'
+import Resource from '../../src/resource'
 
 describe('node lifecycle', () => {
   it('should have valid state', () => {
@@ -23,5 +25,8 @@ describe('node lifecycle', () => {
     strictEqual(n.getPlayer(), 0)
     strictEqual(n.hasCity(), true)
     strictEqual(n.getPort(), null)
+    n.setPort(new Port([Resource.Ore], 2))
+    strictEqual(n.getPort()!.rate, 2)
+    strictEqual(n.getPort()!.resources, Resource.Ore)
   })
 })
