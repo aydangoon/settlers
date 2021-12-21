@@ -22,7 +22,30 @@ export class RoadNetwork {
   constructor() {
     this.connections = [...Array(NUM_NODES)].map(() => [])
 
-    // TODO: Fill connections
+    // Establish our connections.
+    const rowSize = [7, 9, 11, 11, 9, 7] // nodes per row
+    const downOffset = [8, 10, 11, 10, 8]
+
+    let col = 0
+    let row = 0
+    for (let i = 0; i < NUM_NODES; i++) {
+      // establish the connection between node and its right node
+      if (col + 1 !== rowSize[row]) {
+        this.addConnection(i, i + 1)
+      }
+      // establish the conneciton between node and its downward node
+      if (row < 3 && col % 2 == 0) {
+        this.addConnection(i, i + downOffset[row])
+      } else if ((row == 3 || row == 4) && col % 2 == 1) {
+        this.addConnection(i, i + downOffset[row])
+      }
+
+      col++
+      if (col == rowSize[row]) {
+        col = 0
+        row++
+      }
+    }
   }
 
   private children = (nid: number) => this.connections[nid].map(({ id }) => id)
@@ -89,6 +112,7 @@ export class RoadNetwork {
    * @returns a `LongestRoad` object.
    */
   public getLongestRoad(): LongestRoad {
+    // TODO: implement
     return { player: 0, length: 0 }
   }
 }
