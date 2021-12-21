@@ -7,11 +7,11 @@ import {
   NUM_TILES,
 } from '../constants'
 import Node from './node'
-import Edge from './edge'
 import Tile from './tile'
 import { uniformRandom, weightedRandom } from '../utils'
 import Port from './port'
 import Resource from '../resource'
+import RoadNetwork from './road_network'
 
 /**
  * A game board. The board manages the internal logic
@@ -21,17 +21,15 @@ import Resource from '../resource'
  */
 export class Board {
   readonly nodes: Node[]
-  readonly edges: Edge[]
+  readonly roadnetwork: RoadNetwork
   readonly tiles: Tile[]
   public robber: number = -1
 
   constructor() {
-    this.edges = this.generateEdges()
+    this.roadnetwork = new RoadNetwork()
     this.nodes = this.generateNodes()
     // Generate tiles & set robber.
     this.tiles = this.generateTiles()
-
-    // TODO: generate graph
   }
 
   private generateNodes() {
@@ -57,8 +55,6 @@ export class Board {
 
     return nodes
   }
-
-  private generateEdges = () => [...Array(NUM_EDGES)].map(() => new Edge())
 
   private generateTiles() {
     const tiles: Tile[] = new Array(NUM_TILES)
@@ -134,6 +130,4 @@ export class Board {
 
     return tiles
   }
-
-  private generateGraph() {}
 }
