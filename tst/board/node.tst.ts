@@ -27,6 +27,6 @@ describe('node lifecycle', () => {
     strictEqual(n.getPort(), null)
     n.setPort(new Port([Resource.Ore], 2))
     strictEqual(n.getPort()!.rate, 2)
-    strictEqual(n.getPort()!.resources, Resource.Ore)
+    strictEqual(n.getPort()!.resources[0], Resource.Ore)
   })
 })

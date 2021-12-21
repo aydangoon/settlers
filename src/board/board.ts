@@ -23,7 +23,7 @@ export class Board {
   readonly nodes: Node[]
   readonly edges: Edge[]
   readonly tiles: Tile[]
-  public robber: number
+  public robber: number = -1
 
   constructor() {
     this.edges = this.generateEdges()
@@ -35,10 +35,10 @@ export class Board {
   }
 
   private generateNodes() {
-    const nodes: Node[] = new Array(NUM_NODES).fill(new Node())
+    const nodes: Node[] = [...Array(NUM_NODES)].map(() => new Node())
 
     // Assign ports randomly.
-    const ports: number[] = new Array(NUM_RESOURCE_TYPES + 1).fill(1)
+    const ports: number[] = [...Array(NUM_RESOURCE_TYPES + 1)].map(() => 1)
     ports[NUM_RESOURCE_TYPES] = 4 // Set 3:1 ports.
 
     for (let i = 0; i < HAVE_PORTS.length; i++) {
@@ -58,7 +58,7 @@ export class Board {
     return nodes
   }
 
-  private generateEdges = () => new Array(NUM_EDGES).fill(new Edge())
+  private generateEdges = () => [...Array(NUM_EDGES)].map(() => new Edge())
 
   private generateTiles() {
     const tiles: Tile[] = new Array(NUM_TILES)

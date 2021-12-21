@@ -25,13 +25,13 @@ export class ResourceBundle {
 
   constructor(...args: any[]) {
     if (args.length === 0) {
-      this.bundle = new Array(NUM_RESOURCE_TYPES).fill(0) as number[]
+      this.bundle = [...Array(NUM_RESOURCE_TYPES)].map(() => 0) as number[]
     } else if (typeof args[0] === 'number') {
       const [amnt] = args as [number]
-      this.bundle = new Array(NUM_RESOURCE_TYPES).fill(amnt) as number[]
+      this.bundle = [...Array(NUM_RESOURCE_TYPES)].map(() => amnt) as number[]
     } else {
       const [amnts] = args as [number[]]
-      this.bundle = new Array(NUM_RESOURCE_TYPES) as number[]
+      this.bundle = [...Array(NUM_RESOURCE_TYPES)] as number[]
       for (let i = 0; i < NUM_RESOURCE_TYPES; i++) this.bundle[i] = amnts[i]
     }
   }

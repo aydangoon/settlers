@@ -59,7 +59,7 @@ export class Game {
       NUM_ROAD_BUILDING,
     ])
     this.turn = 0
-    this.players = new Array(NUM_PLAYERS).fill(new Player())
+    this.players = [...Array(NUM_PLAYERS)].map(() => new Player())
     this.freeRoads = 0
 
     // TODO board initialization, shuffle development cards, ports, etc.
