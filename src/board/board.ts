@@ -74,7 +74,7 @@ export class Board {
       resources[index]--
 
       // Calculate the node ids of of its nodes.
-      const nid = rowFirstNid[row]
+      const nid = 2 * col + rowFirstNid[row]
       const offset = nid + rowNidOffset[row]
       const nids = [nid, nid + 1, nid + 2, offset, offset + 1, offset + 2]
 
@@ -92,23 +92,23 @@ export class Board {
 
     // Number number token `i` is `tokens[i - 2]`
     const temp = [1, 2, 2, 2, 2]
-    const tokens = [...temp, 1, ...temp.reverse()]
-
+    const tokens = [...temp, 0, ...temp.reverse()]
+    console.log('you', tokens)
     // Distribute 6s and 8s first to ensure seperation.
 
-    // temporary storage of tiles that have already been given a 6 or 8
-    const chosen: number[] = []
-    while (tokens[4] > 0 || tokens[6] > 0) {
-      let tileid = uniformRandom(0, NUM_TILES - 1)
-      if (
-        !chosen.includes(tileid) &&
-        chosen.find((otherId) => tiles[otherId].isAdjacentTo(tiles[tileid])) ===
-          undefined
-      ) {
-        chosen.push(tileid)
-        const number = tokens[4] > 0 ? 6 : 8
-        tiles[tileid].setNumber(number)
-        tokens[number - 2]--
+    const choosable: number[] = [...Array(NUM_TILES).keys()].map((i) =>
+      tiles[i].resource !== Resource.None ? 1 : 0
+    )
+    for (let i = 0; i < 4; i++) {
+      const index = weightedRandom(choosable)
+      const number = tokens[4] > 0 ? 6 : 8
+      tiles[index].setNumber(number)
+      tokens[number - 2]--
+
+      for (let j = 0; j < choosable.length; j++) {
+        if (choosable[j] === 1 && tiles[index].isAdjacentTo(tiles[j])) {
+          choosable[j] = 0
+        }
       }
     }
 
@@ -122,12 +122,17 @@ export class Board {
         tiles[i].resource !== Resource.None ? weightedRandom(tokens) : 5
 
       tiles[i].setNumber(index + 2)
-      tokens[index]--
 
       // If tile is desert, also just set the robber.
-      if (tiles[i].resource === Resource.None) this.robber = i
+      if (tiles[i].resource === Resource.None) {
+        this.robber = i
+      } else {
+        tokens[index]--
+      }
     }
 
     return tiles
   }
 }
+
+export default Board
