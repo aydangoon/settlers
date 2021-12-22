@@ -4,8 +4,8 @@ import {
   BFSTraveral,
   breadthFirstSearch,
   connectedComponents,
-  findCycle,
   Graph,
+  maxTrail,
 } from '../src/utils'
 
 describe('graph basic tests', () => {
@@ -67,7 +67,8 @@ describe('connectedComponents()', () => {
     ])
     const ccs = connectedComponents(g)
     strictEqual(ccs.length, 1)
-    chai.expect(ccs[0]).to.have.members([0, 1, 2])
+    strictEqual(ccs[0].hasEdge(0, 1), true)
+    strictEqual(ccs[0].hasEdge(2, 1), true)
   })
 
   it('works for multiple cc', () => {
@@ -79,40 +80,50 @@ describe('connectedComponents()', () => {
     ])
     const ccs = connectedComponents(g)
     strictEqual(ccs.length, 3)
-    chai.expect(ccs[0]).to.have.members([0, 1, 2])
-    chai.expect(ccs[1]).to.have.members([3, 4])
-    chai.expect(ccs[2]).to.have.members([5, 6])
+    strictEqual(ccs[0].hasEdge(0, 1), true)
+    strictEqual(ccs[0].hasEdge(1, 2), true)
   })
 })
 
-describe('findCycle()', () => {
+describe('maxTrail()', () => {
   it('works :)', () => {
     const g = new Graph([
       ['a', 'b'],
       ['b', 'c'],
       ['c', 'a'],
     ])
-    const c = findCycle(g, 0)
-    notStrictEqual(c, null)
-    chai.expect(c).to.have.members([0, 1, 2])
+    strictEqual(maxTrail(g, 0), 3)
 
-    const g2 = new Graph([
-      ['a', 'b'],
-      ['b', 'c'],
-      ['c', 'd'],
+    const hex = new Graph([
+      ['0', '1'],
+      ['1', '2'],
+      ['2', '3'],
+      ['3', '4'],
+      ['4', '5'],
+      ['5', '0'],
+      ['5', '6'],
+      ['6', '7'],
     ])
-    strictEqual(findCycle(g2, 0), null)
+    strictEqual(maxTrail(hex, 7), 8)
   })
 
-  const g3 = new Graph([
-    ['a', 'b'],
-    ['b', 'c'],
-    ['c', 'a'],
-    ['c', 'd'],
-    ['d', 'e'],
-    ['d', 'f'],
-  ])
-  const c3 = findCycle(g3, 5)
-  notStrictEqual(c3, null)
-  chai.expect(c3).to.have.members([0, 1, 2])
+  it('works for double hex problem', () => {
+    const g = new Graph([
+      ['0', '1'],
+      ['1', '2'],
+      ['2', '3'],
+      ['3', '4'],
+      ['4', '5'],
+      ['5', '0'],
+
+      ['5', '6'],
+      ['6', '7'],
+      ['7', '8'],
+      ['8', '9'],
+      ['9', '4'],
+      ['7', 'a'],
+      ['a', 'b'],
+    ])
+    strictEqual(maxTrail(g, g.size() - 1), 12)
+  })
 })

@@ -112,11 +112,34 @@ describe('board longestRoad one cc', () => {
     strictEqual(b.getLongestRoad(0), 11)
 
     b.roadnetwork.buildRoad(12, 13, 0)
-    //b.roadnetwork.buildRoad(13, 14, 0)
-    strictEqual(b.getLongestRoad(0), 11)
+    b.roadnetwork.buildRoad(13, 14, 0)
+    strictEqual(b.getLongestRoad(0), 12)
   })
 })
 
+describe('board longestRoad multiple cc', () => {
+  it('works for cases 0, 1', () => {
+    const b = new Board()
+    strictEqual(b.roadnetwork.getRoad(0, 1), -1)
+    // Case 1
+    b.roadnetwork.buildRoad(0, 1, 0)
+    b.roadnetwork.buildRoad(1, 2, 0)
+
+    // build an arbitrary random road somewhere else
+    b.roadnetwork.buildRoad(27, 28, 0)
+    strictEqual(b.roadnetwork.getRoad(27, 28), 0)
+
+    strictEqual(b.getLongestRoad(0), 2)
+    b.roadnetwork.buildRoad(2, 10, 0)
+    strictEqual(b.getLongestRoad(0), 3)
+
+    // Case 0
+    b.roadnetwork.buildRoad(10, 9, 0)
+    b.roadnetwork.buildRoad(9, 8, 0)
+    b.roadnetwork.buildRoad(8, 0, 0)
+    strictEqual(b.getLongestRoad(0), 6)
+  })
+})
 // describe('board log', () => {
 //   it('looks nice?', () => {
 //     const b = new Board()

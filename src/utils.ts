@@ -98,7 +98,49 @@ export class Graph {
   }
 }
 
-export const connectedComponents = (g: Graph): number[][] => {
+export function maxTrailRec(v: number, g: Graph, seen: boolean[][]): number {
+  const choices = g.children(v).filter((other) => !seen[v][other])
+  let u: number, ret: number
+  if (choices.length === 0) {
+    ret = 0
+  } else if (choices.length === 1) {
+    u = choices[0]
+    seen[u][v] = true
+    seen[v][u] = true
+    ret = 1 + maxTrailRec(u, g, seen)
+    seen[u][v] = false
+    seen[v][u] = false
+  } else {
+    u = choices[0]
+    seen[u][v] = true
+    seen[v][u] = true
+    ret = 1 + maxTrailRec(u, g, seen)
+    seen[u][v] = false
+    seen[v][u] = false
+    u = choices[1]
+    seen[u][v] = true
+    seen[v][u] = true
+    ret = Math.max(ret, 1 + maxTrailRec(u, g, seen))
+    seen[u][v] = false
+    seen[v][u] = false
+  }
+  return ret
+}
+
+/**
+ * maxTrail explores every possible trail that starts at node `src` and
+ * return the max length of all trials.
+ * @param g
+ * @param src
+ */
+export const maxTrail = (g: Graph, src: number): number => {
+  const seen = [...Array(g.size())].map(() =>
+    [...Array(g.size())].map(() => false)
+  )
+  return maxTrailRec(src, g, seen)
+}
+
+export const connectedComponents = (g: Graph): Graph[] => {
   let remaining = [...Array(g.size())].map((_, i) => i)
   const ccs: number[][] = []
   while (remaining.length > 0) {
@@ -107,48 +149,17 @@ export const connectedComponents = (g: Graph): number[][] => {
     ccs.push([...visited])
     remaining = remaining.filter((elt) => !visited.has(elt))
   }
-  return ccs
-}
 
-export const findCycle = (
-  g: Graph,
-  src: number,
-  hasSubset: boolean = false,
-  subset: Set<number> = new Set<number>()
-) => {
-  const visited = new Set<number>()
-  const parent: { [key: number]: number } = { [src]: -1 }
-  return cycleHelper(g, src, hasSubset, subset, visited, parent)
-}
-
-const cycleHelper = (
-  g: Graph,
-  curr: number,
-  hasSubset: boolean,
-  subset: Set<number>,
-  visited: Set<number>,
-  parent: { [key: number]: number }
-): number[] | null => {
-  visited.add(curr)
-  const children = g.children(curr)
-  //console.log('on', curr, children)
-  for (let i = 0; i < children.length; i++) {
-    if (children[i] === parent[curr]) continue
-    if (hasSubset && !subset.has(children[i])) continue
-    if (visited.has(children[i])) {
-      const cycle = []
-      do {
-        cycle.push(curr)
-        curr = parent[curr]
-      } while (curr !== children[i])
-      cycle.push(children[i])
-      return cycle
-    }
-    parent[children[i]] = curr
-    let res = cycleHelper(g, children[i], hasSubset, subset, visited, parent)
-    if (res !== null) return res
-  }
-  return null
+  // Kinda cringe but it has to be done.
+  return ccs.map((cc) => {
+    const edges: [string, string][] = []
+    cc.forEach((u) => {
+      cc.forEach((v) => {
+        if (g.hasEdge(u, v)) edges.push([u.toString(), v.toString()])
+      })
+    })
+    return new Graph(edges)
+  })
 }
 
 export interface BFSTraveral {
