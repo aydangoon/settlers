@@ -11,6 +11,7 @@
     "start": "npm run build && node build/src/index.js",
     "test": "mocha --recursive build/tst",
     "btest": "npm run build && npm run test",
+    "coverage": "nyc npm run test",
     "build": "rm -rf ./build/ && tsc",
     "docs": "typedoc && open doc/index.html"
   },
@@ -22,6 +23,7 @@
     "assert": "^2.0.0",
     "chai": "^4.3.4",
     "mocha": "^9.1.3",
+    "nyc": "^15.1.0",
     "prettier": "^2.5.1",
     "typedoc": "^0.22.10",
     "typescript": "^4.5.4"

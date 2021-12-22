@@ -112,6 +112,39 @@ export class RoadNetwork {
    * @returns a `LongestRoad` object.
    */
   public getLongestRoad(): LongestRoad {
+    // LongestRoad(ConnectedComponent) High Level Algorithm
+
+    /**
+     * Case 0: no odd-degree nodes.
+     * In this case eulerian cycle exists so just return the number of edges.
+     */
+
+    /**
+     * Case 1: 2 odd-degree nodes
+     * In this case same as case 1, eulerian path exists so just return the
+     * number of edges.
+     */
+
+    /**
+     * Case 2: 2k (for int k > 1) odd-degree nodes.
+     *
+     * Case 2a: There are no nodes with degree 3.
+     *  1. Pick a node with degree 1 and run BFS.
+     *  2. Return the length of the longest path.
+     *
+     * Case 2b. There is a node with degree 3.
+     *  1. Pick a starting node with degree 3.
+     *  2. Look for a cycle (use BFS to ensure it is minimal).
+     *  2a. If no cycle, go to Case 2a.
+     *  2b. If cycle found, it will be of size 6 (bc hexagonal tiles).
+     *  3. Delete every edge on the cycle.
+     *  4. Delete every node that now has degree 0
+     *  5. For every node that was on that cycle and now has degree 1 (so
+     *     every node on the cycle that wasn't deleted in step 4) mark it
+     *     as "LENGTH 6"
+     *  6. Repeat
+     */
+
     // TODO: implement
     return { player: 0, length: 0 }
   }
