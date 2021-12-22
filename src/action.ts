@@ -4,6 +4,7 @@
  */
 
 import Resource from './resource'
+import ResourceBundle from './resource_bundle'
 
 /**
  * All possible types of actions.
@@ -38,6 +39,11 @@ export enum ActionType {
 }
 
 export interface ActionPayload {}
+
+export interface DiscardPayload extends ActionPayload {
+  /** The bundle we'll be discarding */
+  bundle: ResourceBundle
+}
 
 export interface RollPayload extends ActionPayload {
   /** the value of the dice sum. */
@@ -97,8 +103,11 @@ export class Action {
   readonly type: ActionType
   /** Any additional data needed to convey the desired action. */
   readonly payload: ActionPayload
-  constructor(type: ActionType, payload: ActionPayload = {}) {
+  /** The player number who is requesting the action. */
+  readonly player: number
+  constructor(type: ActionType, player: number = 0, payload: ActionPayload = {}) {
     this.type = type
+    this.player = player
     this.payload = payload
   }
 

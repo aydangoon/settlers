@@ -22,9 +22,12 @@ import Action, {
   BuildCityPayload,
   BuildRoadPayload,
   BuildSettlementPayload,
+  DiscardPayload,
   MoveRobberPayload,
   RobPayload,
   RollPayload,
+  SelectMonopolyResourcePayload,
+  SelectYearOfPlentyResourcesPayload,
 } from './action'
 import isValidTransition, { TurnState } from './turn_fsm'
 import { rollDie } from './utils'
@@ -97,8 +100,9 @@ export class Game {
   // do_ prefixed functions are helpers to actually do their respective actions.
   // these **change** game state.
 
-  private do_roll(payload: RollPayload) {
-    if (payload.value !== 7) {
+  private do_roll(action: Action) {
+    const { value } = action.payload as RollPayload
+    if (value !== 7) {
       // Standard case. Hand out resources.
 
       // Production for each player.
@@ -106,7 +110,7 @@ export class Game {
 
       // For every tile, update the production of each player.
       this.board.tiles
-        .filter((tile, i) => this.board.robber !== i && tile.getNumber() === payload.value)
+        .filter((tile, i) => this.board.robber !== i && tile.getNumber() === value)
         .forEach((tile) => {
           tile.nodes.forEach((nodeid) => {
             const node = this.board.nodes[nodeid]
@@ -142,25 +146,28 @@ export class Game {
     this.hasRolled = true
   }
 
-  private do_buildSettlement(payload: BuildSettlementPayload) {
+  // Build things.
+
+  private do_buildSettlement(action: Action) {
+    const { node } = action.payload as BuildSettlementPayload
     if (this.phase === GamePhase.Playing) {
-      this.board.nodes[payload.node].buildSettlement(this.turn)
+      this.board.nodes[node].buildSettlement(this.turn)
       this.players[this.turn].resources.subtract(ResourceBundle.settlementCost)
     } else {
       // Setup case. just build the settlement where requested.
-      this.board.nodes[payload.node].buildSettlement(this.turn)
+      this.board.nodes[node].buildSettlement(this.turn)
       // If this is our second setup phase settlement, collect resources.
       if (this.phase === GamePhase.SetupBackward) {
         this.board.tiles
-          .filter(({ nodes }) => nodes.includes(payload.node))
+          .filter(({ nodes }) => nodes.includes(node))
           .forEach(({ resource }) => this.players[this.turn].resources.add(resource, 1))
       }
       this.turnState = TurnState.SetupRoad
     }
   }
 
-  private do_buildRoad(payload: BuildRoadPayload) {
-    const { node0, node1 } = payload
+  private do_buildRoad(action: Action) {
+    const { node0, node1 } = action.payload as BuildRoadPayload
     if (this.phase === GamePhase.Playing) {
       this.board.roadnetwork.buildRoad(node0, node1, this.turn)
       this.players[this.turn].resources.subtract(ResourceBundle.roadCost)
@@ -186,25 +193,77 @@ export class Game {
     }
   }
 
-  private do_buildCity(payload: BuildCityPayload) {
-    this.board.nodes[payload.node].buildCity()
+  private do_buildCity(action: Action) {
+    const { node } = action.payload as BuildCityPayload
+    this.board.nodes[node].buildCity()
     this.players[this.turn].resources.subtract(ResourceBundle.cityCost)
   }
+
+  // Play dev cards.
 
   private do_playRobber() {
     this.players[this.turn].devCards.remove(DevCard.Knight)
     this.turnState = TurnState.MovingRobber
   }
 
-  private do_moveRobber(payload: MoveRobberPayload) {
-    this.board.robber = payload.to
+  private do_moveRobber(action: Action) {
+    const { to } = action.payload as MoveRobberPayload
+    this.board.robber = to
     this.turnState = TurnState.Robbing
   }
 
-  private do_Rob(payload: RobPayload) {
-    const res: Resource = this.players[payload.victim].resources.removeOneAtRandom()
+  private do_Rob(action: Action) {
+    const { victim } = action.payload as RobPayload
+    const res: Resource = this.players[victim].resources.removeOneAtRandom()
     this.players[this.turn].resources.add(res, 1)
     this.turnState = this.hasRolled ? TurnState.Postroll : TurnState.Preroll
+  }
+
+  private do_playMonopoly() {
+    this.players[this.turn].devCards.remove(DevCard.Monopoly)
+    this.turnState = TurnState.SelectingMonopolyResource
+  }
+
+  private do_selectMonopolyResource(action: Action) {
+    const { resource } = action.payload as SelectMonopolyResourcePayload
+    this.players.forEach((player, i) => {
+      if (i === this.turn) return
+      const amnt = player.resources.removeAll(resource)
+      this.players[this.turn].resources.add(resource, amnt)
+    })
+    this.turnState = this.hasRolled ? TurnState.Postroll : TurnState.Preroll
+  }
+
+  private do_playYearOfPlenty() {
+    this.players[this.turn].devCards.remove(DevCard.YearOfPlenty)
+    this.turnState = TurnState.SelectingYearOfPlentyResources
+  }
+
+  private do_selectYearOfPlentyResources(action: Action) {
+    const { resources } = action.payload as SelectYearOfPlentyResourcesPayload
+    resources.forEach((res) => {
+      this.players[this.turn].resources.add(res, 1)
+      this.bank.subtract(res, 1)
+    })
+    this.turnState = this.hasRolled ? TurnState.Postroll : TurnState.Preroll
+  }
+
+  private do_playRoadBuilder() {
+    this.players[this.turn].devCards.remove(DevCard.RoadBuilder)
+    this.freeRoads = 2
+    this.turnState = this.hasRolled ? TurnState.Preroll : TurnState.Postroll
+  }
+
+  private do_discard(action: Action) {
+    const { bundle } = action.payload as DiscardPayload
+    this.players[action.player].resources.subtract(bundle)
+    this.mustDiscard[action.player] = false
+
+    const overLimit = this.mustDiscard.reduce((acc, curr) => acc || curr, false)
+
+    // If someone is over the limit, we move to discarding state before moving robber.
+    // Otherwise we just move to moving robber state.
+    this.turnState = overLimit ? TurnState.Discarding : TurnState.MovingRobber
   }
 
   private do_endTurn() {
@@ -220,10 +279,10 @@ export class Game {
    * @param requester The player number who requested the action
    * @returns Boolean indicating if the action is valid.
    */
-  private isValidAction(action: Action, requester: number): boolean {
+  private isValidAction(action: Action): boolean {
     // Is this action restricted only to the player of the current turn?
     if (
-      requester != this.turn &&
+      action.player != this.turn &&
       (this.turnState === TurnState.Preroll ||
         ![ActionType.Discard, ActionType.MakeTradeOffer, ActionType.DecideOnTradeOffer].includes(
           action.type
@@ -244,9 +303,9 @@ export class Game {
   }
 
   private doAction(action: Action): void {
-    const { payload, type } = action
+    const { type } = action
     if (type === ActionType.Roll) {
-      this.do_roll(payload as RollPayload)
+      this.do_roll(action)
     } else if (type === ActionType.EndTurn) {
       this.do_endTurn()
     }
@@ -260,9 +319,9 @@ export class Game {
    * @param requester Player number who requested the action.
    * @returns `null` if `action` is invalid, the completed, valid action otherwise.
    */
-  public handleAction(action: Action, requester: number): null | Action {
+  public handleAction(action: Action): null | Action {
     // Determine if the action can be done given current game state.
-    if (!this.isValidAction(action, requester)) return null
+    if (!this.isValidAction(action)) return null
 
     // The two edge cases where we need to update our action's payload due
     // to randomness

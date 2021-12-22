@@ -84,9 +84,17 @@ export class ResourceBundle implements Loggable {
    *
    * @param bundle The bundle we with to subtract from this bundle. It is unchanged.
    */
-  public subtract(bundle: ResourceBundle) {
-    for (let i = 0; i < NUM_RESOURCE_TYPES; i++) {
-      this.bundle[i] -= bundle.get(i)
+  public subtract(bundle: ResourceBundle): void
+  public subtract(resource: Resource, amnt: number): void
+  public subtract(...args: any[]) {
+    if (args.length === 1) {
+      const [bundle] = args as [ResourceBundle]
+      for (let i = 0; i < NUM_RESOURCE_TYPES; i++) {
+        this.bundle[i] -= bundle.get(i)
+      }
+    } else {
+      const [resource, amnt] = args as [Resource, number]
+      this.add(resource, -1 * amnt)
     }
   }
 
