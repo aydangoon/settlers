@@ -118,8 +118,7 @@ export class Board implements Loggable {
 
       // If None (desert), index is 5 since number is 7. Otherwise
       // do a weighted random pick.
-      const index =
-        tiles[i].resource !== Resource.None ? weightedRandom(tokens) : 5
+      const index = tiles[i].resource !== Resource.None ? weightedRandom(tokens) : 5
 
       tiles[i].setNumber(index + 2)
 
@@ -135,22 +134,17 @@ export class Board implements Loggable {
   }
 
   /**
-   * Given a connected component of well-defined graph `g`, find its longest trail.
+   * Given a connected graph g find its longest trail.
    * @param g The graph. Every node degree is on [0, 3].
-   * @param nodes The subset of nodes in the graph we consider.
    * @returns The length of the longest trail.
    */
-  private recursiveLongestRoad(g: Graph): number {
+  private longestRoadOn(g: Graph): number {
     const oddDeg = []
     for (let i = 0; i < g.size(); i++) {
       if (g.degree(i) % 2 === 1) oddDeg.push(i)
     }
-
     // If at most 2 odd-degree, eulerian path exists, just return edgeCount.
-    if (oddDeg.length <= 2) return g.edgeCount()
-
-    // run exhaustive path length find from every odd degree node.
-    return Math.max(...oddDeg.map((i) => maxTrail(g, i)))
+    return oddDeg.length <= 2 ? g.edgeCount() : Math.max(...oddDeg.map((i) => maxTrail(g, i)))
   }
 
   /**
@@ -169,29 +163,18 @@ export class Board implements Loggable {
       if (this.roadnetwork.getRoad(i, i + 1) === player) {
         if (!node.isEmpty() && node.getPlayer() !== player) {
           edges.push([`${i}_l`, `${i + 1}`])
-        } else if (
-          !this.nodes[i + 1].isEmpty() &&
-          this.nodes[i + 1].getPlayer() !== player
-        ) {
+        } else if (!this.nodes[i + 1].isEmpty() && this.nodes[i + 1].getPlayer() !== player) {
           edges.push([`${i}`, `${i + 1}_r`])
         } else {
           edges.push([`${i}`, `${i + 1}`])
         }
       }
       // Check down
-      const below: undefined | number = this.roadnetwork
-        .adjacentTo(i)
-        .filter((id) => id > i + 1)[0]
-      if (
-        below !== undefined &&
-        this.roadnetwork.getRoad(i, below) === player
-      ) {
+      const below = this.roadnetwork.adjacentTo(i).filter((id) => id > i + 1)[0]
+      if (below !== undefined && this.roadnetwork.getRoad(i, below) === player) {
         if (!node.isEmpty() && node.getPlayer() !== player) {
           edges.push([`${i}_u`, `${below}`])
-        } else if (
-          !this.nodes[below].isEmpty() &&
-          this.nodes[below].getPlayer() !== player
-        ) {
+        } else if (!this.nodes[below].isEmpty() && this.nodes[below].getPlayer() !== player) {
           edges.push([`${i}`, `${below}_d`])
         } else {
           edges.push([`${i}`, `${below}`])
@@ -199,12 +182,8 @@ export class Board implements Loggable {
       }
     }
 
-    // Step 1: Run the helper on all connected components.
-    const graph = new Graph(edges)
-    const ccs: Graph[] = connectedComponents(graph)
-    const pathLengths = ccs.map((cc) => this.recursiveLongestRoad(cc))
-
-    return Math.max(...pathLengths)
+    const ccs: Graph[] = connectedComponents(new Graph(edges))
+    return Math.max(...ccs.map((cc) => this.longestRoadOn(cc)))
   }
 
   toLog = () => {

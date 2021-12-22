@@ -21,6 +21,8 @@ export enum ActionType {
   PlayYearOfPlenty,
   SelectYearOfPlentyResources,
 
+  PlayRoadBuilder,
+
   BuildSettlement,
   BuildCity,
   BuildRoad,

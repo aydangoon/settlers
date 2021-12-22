@@ -19,8 +19,11 @@ import Player from './player'
 import ResourceBundle from './resource_bundle'
 import Action, {
   ActionType,
+  BuildCityPayload,
   BuildRoadPayload,
   BuildSettlementPayload,
+  MoveRobberPayload,
+  RobPayload,
   RollPayload,
 } from './action'
 import isValidTransition, { TurnState } from './turn_fsm'
@@ -29,6 +32,7 @@ import DevCardBundle from './dev_card_bundle'
 import Board from './board/board'
 import Node from './board/node'
 import Resource from './resource'
+import DevCard from './dev_card'
 
 /**
  * Enum of game phases.
@@ -59,6 +63,8 @@ export class Game {
   private freeRoads: number
   /** Boolean list of players who still need to submit discard actions. */
   private mustDiscard: boolean[]
+  /** Boolean indicating if we have rolled on the current turn yet. */
+  private hasRolled: boolean
 
   constructor() {
     this.bank = new ResourceBundle(NUM_EACH_RESOURCE)
@@ -73,6 +79,7 @@ export class Game {
     this.turn = 0
     this.players = [...Array(NUM_PLAYERS)].map(() => new Player())
     this.freeRoads = 0
+    this.hasRolled = false
 
     this.phase = GamePhase.SetupForward
 
@@ -95,34 +102,23 @@ export class Game {
       // Standard case. Hand out resources.
 
       // Production for each player.
-      const production: ResourceBundle[] = [...Array(NUM_PLAYERS)].map(
-        () => new ResourceBundle()
-      )
+      const production: ResourceBundle[] = [...Array(NUM_PLAYERS)].map(() => new ResourceBundle())
 
       // For every tile, update the production of each player.
       this.board.tiles
-        .filter(
-          (tile, i) =>
-            this.board.robber !== i && tile.getNumber() === payload.value
-        )
+        .filter((tile, i) => this.board.robber !== i && tile.getNumber() === payload.value)
         .forEach((tile) => {
           tile.nodes.forEach((nodeid) => {
             const node = this.board.nodes[nodeid]
             if (!node.isEmpty()) {
-              production[node.getPlayer()].add(
-                tile.resource,
-                node.hasCity() ? 2 : 1
-              )
+              production[node.getPlayer()].add(tile.resource, node.hasCity() ? 2 : 1)
             }
           })
         })
 
       // Check if the bank has enough of each resource.
       for (let i = 0; i < NUM_RESOURCE_TYPES; i++) {
-        const sum = production.reduce(
-          (acc, bundle) => acc + bundle.get(i as Resource),
-          0
-        )
+        const sum = production.reduce((acc, bundle) => acc + bundle.get(i as Resource), 0)
         // If there is not enough of a resource, noone gets it.
         if (sum > this.bank.get(i as Resource)) {
           production.forEach((bundle) => bundle.removeAll(i as Resource))
@@ -135,24 +131,21 @@ export class Game {
       this.turnState = TurnState.Postroll
     } else {
       // Robber case.
-      this.mustDiscard = this.players.map(
-        ({ resources }) => resources.size() > ROBBER_LIMIT
-      )
+      this.mustDiscard = this.players.map(({ resources }) => resources.size() > ROBBER_LIMIT)
 
-      const overLimit = this.mustDiscard.reduce(
-        (acc, curr) => acc || curr,
-        false
-      )
+      const overLimit = this.mustDiscard.reduce((acc, curr) => acc || curr, false)
 
       // If someone is over the limit, we move to discarding state before moving robber.
       // Otherwise we just move to moving robber state.
       this.turnState = overLimit ? TurnState.Discarding : TurnState.MovingRobber
     }
+    this.hasRolled = true
   }
 
   private do_buildSettlement(payload: BuildSettlementPayload) {
     if (this.phase === GamePhase.Playing) {
-      // TODO: Regular case.
+      this.board.nodes[payload.node].buildSettlement(this.turn)
+      this.players[this.turn].resources.subtract(ResourceBundle.settlementCost)
     } else {
       // Setup case. just build the settlement where requested.
       this.board.nodes[payload.node].buildSettlement(this.turn)
@@ -160,9 +153,7 @@ export class Game {
       if (this.phase === GamePhase.SetupBackward) {
         this.board.tiles
           .filter(({ nodes }) => nodes.includes(payload.node))
-          .forEach(({ resource }) =>
-            this.players[this.turn].resources.add(resource, 1)
-          )
+          .forEach(({ resource }) => this.players[this.turn].resources.add(resource, 1))
       }
       this.turnState = TurnState.SetupRoad
     }
@@ -171,7 +162,8 @@ export class Game {
   private do_buildRoad(payload: BuildRoadPayload) {
     const { node0, node1 } = payload
     if (this.phase === GamePhase.Playing) {
-      // TODO: Regular case.
+      this.board.roadnetwork.buildRoad(node0, node1, this.turn)
+      this.players[this.turn].resources.subtract(ResourceBundle.roadCost)
     } else {
       // Setup case. just build the road where requested.
       this.board.roadnetwork.buildRoad(node0, node1, this.turn)
@@ -194,9 +186,31 @@ export class Game {
     }
   }
 
+  private do_buildCity(payload: BuildCityPayload) {
+    this.board.nodes[payload.node].buildCity()
+    this.players[this.turn].resources.subtract(ResourceBundle.cityCost)
+  }
+
+  private do_playRobber() {
+    this.players[this.turn].devCards.remove(DevCard.Knight)
+    this.turnState = TurnState.MovingRobber
+  }
+
+  private do_moveRobber(payload: MoveRobberPayload) {
+    this.board.robber = payload.to
+    this.turnState = TurnState.Robbing
+  }
+
+  private do_Rob(payload: RobPayload) {
+    const res: Resource = this.players[payload.victim].resources.removeOneAtRandom()
+    this.players[this.turn].resources.add(res, 1)
+    this.turnState = this.hasRolled ? TurnState.Postroll : TurnState.Preroll
+  }
+
   private do_endTurn() {
     this.freeRoads = 0
     this.turn = (this.turn + 1) % NUM_PLAYERS
+    this.hasRolled = false
     this.turnState = TurnState.Preroll
   }
 
@@ -211,11 +225,9 @@ export class Game {
     if (
       requester != this.turn &&
       (this.turnState === TurnState.Preroll ||
-        ![
-          ActionType.Discard,
-          ActionType.MakeTradeOffer,
-          ActionType.DecideOnTradeOffer,
-        ].includes(action.type))
+        ![ActionType.Discard, ActionType.MakeTradeOffer, ActionType.DecideOnTradeOffer].includes(
+          action.type
+        ))
     ) {
       return false
     }
