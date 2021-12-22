@@ -12,6 +12,7 @@ import { uniformRandom, weightedRandom } from '../utils'
 import Port from './port'
 import Resource from '../resource'
 import RoadNetwork from './road_network'
+import Loggable from '../loggable'
 
 /**
  * A game board. The board manages the internal logic
@@ -19,7 +20,7 @@ import RoadNetwork from './road_network'
  * It is **agnostic** of game state and will never check if
  * a call to its public interface violates game state.
  */
-export class Board {
+export class Board implements Loggable {
   readonly nodes: Node[]
   readonly roadnetwork: RoadNetwork
   readonly tiles: Tile[]
@@ -93,7 +94,6 @@ export class Board {
     // Number number token `i` is `tokens[i - 2]`
     const temp = [1, 2, 2, 2, 2]
     const tokens = [...temp, 0, ...temp.reverse()]
-    console.log('you', tokens)
     // Distribute 6s and 8s first to ensure seperation.
 
     const choosable: number[] = [...Array(NUM_TILES).keys()].map((i) =>
@@ -132,6 +132,25 @@ export class Board {
     }
 
     return tiles
+  }
+
+  toLog = () => {
+    const max = 11
+    const rowSize = [max - 4, max - 2, max, max, max - 2, max - 4]
+    let col = 0
+    let row = 0
+    let str: string = '\t'.repeat(Math.floor((max - rowSize[row]) / 2))
+    for (let i = 0; i < this.nodes.length; i++) {
+      str += this.nodes[i].toLog() + '\t'
+      col++
+      if (col === rowSize[row]) {
+        str += '\n\n\n'
+        col = 0
+        row++
+        str += '\t'.repeat(Math.floor((max - rowSize[row]) / 2))
+      }
+    }
+    return str
   }
 }
 

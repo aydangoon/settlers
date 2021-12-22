@@ -58,3 +58,10 @@ describe('board', () => {
     )
   })
 })
+
+// describe('board log', () => {
+//   it('looks nice?', () => {
+//     const b = new Board()
+//     console.log(b.toLog())
+//   })
+// })

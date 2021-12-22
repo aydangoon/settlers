@@ -1,11 +1,12 @@
-import DevCard from './dev_card'
+import DevCard, { devCardStr } from './dev_card'
 import { NUM_DEV_CARD_TYPES } from './constants'
 import { weightedRandom } from './utils'
+import Loggable from './loggable'
 
 /**
  * A collection of devcards.
  */
-export class DevCardBundle {
+export class DevCardBundle implements Loggable {
   private bundle: number[]
 
   /**
@@ -86,6 +87,9 @@ export class DevCardBundle {
   public isEmpty() {
     return this.size() === 0
   }
+
+  toLog = () =>
+    this.bundle.map((amnt, i) => `${devCardStr(i)}: ${amnt}`).join(', ')
 }
 
 export default DevCardBundle

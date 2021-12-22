@@ -1,9 +1,10 @@
-import Resource from '../resource'
+import Loggable from '../loggable'
+import Resource, { resStr } from '../resource'
 
 /**
  * A tile on the board.
  */
-export class Tile {
+export class Tile implements Loggable {
   /** The resource of the tile. Set once at initialization. */
   readonly resource: Resource
   /** The nodeids of the nodes incident on this tile. Set once at initialization. */
@@ -38,6 +39,8 @@ export class Tile {
     }
     return false
   }
+
+  toLog = () => `(${this.number}, ${resStr(this.resource)})`
 }
 
 export default Tile

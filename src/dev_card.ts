@@ -9,4 +9,19 @@ export enum DevCard {
   RoadBuilder,
 }
 
+export const devCardStr = (c: DevCard) => {
+  switch (c) {
+    case DevCard.Knight:
+      return 'knight'
+    case DevCard.VictoryPoint:
+      return 'vp'
+    case DevCard.YearOfPlenty:
+      return 'YoP'
+    case DevCard.Monopoly:
+      return 'monopoly'
+    default:
+      return 'road builder'
+  }
+}
+
 export default DevCard

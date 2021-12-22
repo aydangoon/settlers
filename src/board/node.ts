@@ -1,9 +1,10 @@
+import Loggable from '../loggable'
 import Port from './port'
 
 /**
  * A node on our board.
  */
-export class Node {
+export class Node implements Loggable {
   /** The player number who has built on this node. -1 if none. */
   private player: number = -1
   /** If the node has a city. */
@@ -58,6 +59,11 @@ export class Node {
     if (this.port !== null) return
     this.port = port
   }
+
+  toLog = () =>
+    this.isEmpty()
+      ? '(_, empty)'
+      : `(${this.player}, ${this.city ? 'city' : 'set'})`
 }
 
 export default Node

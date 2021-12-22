@@ -1,11 +1,12 @@
-import Resource from './resource'
+import Resource, { resStr } from './resource'
 import { NUM_RESOURCE_TYPES } from './constants'
 import { weightedRandom } from './utils'
+import Loggable from './loggable'
 
 /**
  * A collection of resources.
  */
-export class ResourceBundle {
+export class ResourceBundle implements Loggable {
   private bundle: number[]
 
   /**
@@ -152,6 +153,8 @@ export class ResourceBundle {
   public static settlementCost = new ResourceBundle([1, 1, 0, 1, 1])
   public static cityCost = new ResourceBundle([0, 0, 3, 2, 0])
   public static devCardCost = new ResourceBundle([0, 0, 1, 1, 1])
+
+  toLog = () => this.bundle.map((amnt, i) => `${resStr(i)}: ${amnt}`).join(', ')
 }
 
 export default ResourceBundle

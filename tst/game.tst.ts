@@ -5,19 +5,20 @@ import { TurnState } from '../src/turn_fsm'
 
 describe('handle roll action', () => {
   const game: any = new Game()
+  const rollAction = new Action(ActionType.Roll, { value: 3 })
   let turn: number = 0
 
   // configure game
   game.turnState = TurnState.Preroll
 
   it('handleAction(<roll action>, 1) returns null, requester incorrect', () => {
-    const e = (<Game>game).handleAction(new Action(ActionType.Roll), turn + 1)
+    const e = (<Game>game).handleAction(rollAction, turn + 1)
     assert.strictEqual(e, null)
     assert.strictEqual(game.turnState, TurnState.Preroll)
   })
 
   it('handleAction(<roll action>, 0) returns a roll event', () => {
-    const e = (<Game>game).handleAction(new Action(ActionType.Roll), turn)
+    const e = (<Game>game).handleAction(rollAction, turn)
     assert.notStrictEqual(e, null)
     assert.strictEqual(e instanceof Action, true)
     assert.strictEqual(e!.type, ActionType.Roll)
@@ -30,13 +31,14 @@ describe('handle roll action', () => {
 
 describe('roll & endturn actions', () => {
   const game: any = new Game()
+  const rollAction = new Action(ActionType.Roll, { value: 3 })
   let turn: number = 0
 
   // configure game
   game.turnState = TurnState.Preroll
 
   it('roll, endturn, roll, endturn', () => {
-    game.handleAction(new Action(ActionType.Roll), turn)
+    game.handleAction(rollAction, turn)
     assert.strictEqual(game.turnState, TurnState.Postroll)
     game.handleAction(new Action(ActionType.EndTurn), turn)
     assert.strictEqual(game.turnState, TurnState.Preroll)
@@ -44,7 +46,7 @@ describe('roll & endturn actions', () => {
 
     turn++
 
-    game.handleAction(new Action(ActionType.Roll), turn)
+    game.handleAction(rollAction, turn)
     assert.strictEqual(game.turnState, TurnState.Postroll)
     game.handleAction(new Action(ActionType.EndTurn), turn)
     assert.strictEqual(game.turnState, TurnState.Preroll)

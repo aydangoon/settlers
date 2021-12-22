@@ -12,14 +12,23 @@ import {
   NUM_PLAYERS,
   NUM_ROAD_BUILDING,
   NUM_YEAR_OF_PLENTY,
+  NUM_RESOURCE_TYPES,
+  ROBBER_LIMIT,
 } from './constants'
 import Player from './player'
 import ResourceBundle from './resource_bundle'
-import Action, { ActionType, RollPayload } from './action'
+import Action, {
+  ActionType,
+  BuildRoadPayload,
+  BuildSettlementPayload,
+  RollPayload,
+} from './action'
 import isValidTransition, { TurnState } from './turn_fsm'
 import { rollDie } from './utils'
 import DevCardBundle from './dev_card_bundle'
 import Board from './board/board'
+import Node from './board/node'
+import Resource from './resource'
 
 /**
  * Enum of game phases.
@@ -48,9 +57,8 @@ export class Game {
   private turnState: TurnState
   /** The number of roads the current turn's player can place for no cost. */
   private freeRoads: number
-
-  // Some variables needed only for the setup phase.
-  private setup_settlementPlaced: boolean
+  /** Boolean list of players who still need to submit discard actions. */
+  private mustDiscard: boolean[]
 
   constructor() {
     this.bank = new ResourceBundle(NUM_EACH_RESOURCE)
@@ -67,8 +75,9 @@ export class Game {
     this.freeRoads = 0
 
     this.phase = GamePhase.SetupForward
-    this.setup_settlementPlaced = false
+
     this.turnState = TurnState.SetupSettlement
+    this.mustDiscard = [...Array(NUM_PLAYERS)].map(() => false)
   }
 
   // ============================ can_ helper methods ==========================
@@ -81,14 +90,111 @@ export class Game {
   // do_ prefixed functions are helpers to actually do their respective actions.
   // these **change** game state.
 
-  private do_roll(action: Action) {
-    // TODO: all the roll logic.
+  private do_roll(payload: RollPayload) {
+    if (payload.value !== 7) {
+      // Standard case. Hand out resources.
 
-    // Update turn state.
-    this.turnState = TurnState.Postroll
+      // Production for each player.
+      const production: ResourceBundle[] = [...Array(NUM_PLAYERS)].map(
+        () => new ResourceBundle()
+      )
+
+      // For every tile, update the production of each player.
+      this.board.tiles
+        .filter(
+          (tile, i) =>
+            this.board.robber !== i && tile.getNumber() === payload.value
+        )
+        .forEach((tile) => {
+          tile.nodes.forEach((nodeid) => {
+            const node = this.board.nodes[nodeid]
+            if (!node.isEmpty()) {
+              production[node.getPlayer()].add(
+                tile.resource,
+                node.hasCity() ? 2 : 1
+              )
+            }
+          })
+        })
+
+      // Check if the bank has enough of each resource.
+      for (let i = 0; i < NUM_RESOURCE_TYPES; i++) {
+        const sum = production.reduce(
+          (acc, bundle) => acc + bundle.get(i as Resource),
+          0
+        )
+        // If there is not enough of a resource, noone gets it.
+        if (sum > this.bank.get(i as Resource)) {
+          production.forEach((bundle) => bundle.removeAll(i as Resource))
+        }
+      }
+
+      // Finally distribute the production bundles to their respective players.
+      production.forEach((bundle, i) => this.players[i].resources.add(bundle))
+
+      this.turnState = TurnState.Postroll
+    } else {
+      // Robber case.
+      this.mustDiscard = this.players.map(
+        ({ resources }) => resources.size() > ROBBER_LIMIT
+      )
+
+      const overLimit = this.mustDiscard.reduce(
+        (acc, curr) => acc || curr,
+        false
+      )
+
+      // If someone is over the limit, we move to discarding state before moving robber.
+      // Otherwise we just move to moving robber state.
+      this.turnState = overLimit ? TurnState.Discarding : TurnState.MovingRobber
+    }
   }
 
-  private do_endTurn(action: Action) {
+  private do_buildSettlement(payload: BuildSettlementPayload) {
+    if (this.phase === GamePhase.Playing) {
+      // TODO: Regular case.
+    } else {
+      // Setup case. just build the settlement where requested.
+      this.board.nodes[payload.node].buildSettlement(this.turn)
+      // If this is our second setup phase settlement, collect resources.
+      if (this.phase === GamePhase.SetupBackward) {
+        this.board.tiles
+          .filter(({ nodes }) => nodes.includes(payload.node))
+          .forEach(({ resource }) =>
+            this.players[this.turn].resources.add(resource, 1)
+          )
+      }
+      this.turnState = TurnState.SetupRoad
+    }
+  }
+
+  private do_buildRoad(payload: BuildRoadPayload) {
+    const { node0, node1 } = payload
+    if (this.phase === GamePhase.Playing) {
+      // TODO: Regular case.
+    } else {
+      // Setup case. just build the road where requested.
+      this.board.roadnetwork.buildRoad(node0, node1, this.turn)
+      if (this.phase === GamePhase.SetupForward) {
+        if (this.turn === NUM_PLAYERS - 1) {
+          this.phase = GamePhase.SetupBackward
+        } else {
+          this.turn++
+        }
+        this.turnState = TurnState.SetupSettlement
+      } else {
+        if (this.turn === 0) {
+          this.phase = GamePhase.Playing
+          this.turnState = TurnState.Preroll
+        } else {
+          this.turn--
+          this.turnState = TurnState.SetupSettlement
+        }
+      }
+    }
+  }
+
+  private do_endTurn() {
     this.freeRoads = 0
     this.turn = (this.turn + 1) % NUM_PLAYERS
     this.turnState = TurnState.Preroll
@@ -126,10 +232,11 @@ export class Game {
   }
 
   private doAction(action: Action): void {
-    if (action.type === ActionType.Roll) {
-      this.do_roll(action)
-    } else if (action.type === ActionType.EndTurn) {
-      this.do_endTurn(action)
+    const { payload, type } = action
+    if (type === ActionType.Roll) {
+      this.do_roll(payload as RollPayload)
+    } else if (type === ActionType.EndTurn) {
+      this.do_endTurn()
     }
   }
 
