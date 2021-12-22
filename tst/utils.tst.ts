@@ -22,6 +22,8 @@ describe('graph basic tests', () => {
     chai.expect(g.children(1)).to.have.members([0, 2])
     chai.expect(g.children(0)).to.have.members([1])
     chai.expect(g.children(2)).to.have.members([1])
+    g.deleteEdge(0, 1)
+    strictEqual(g.hasEdge(0, 1), false)
   })
 })
 

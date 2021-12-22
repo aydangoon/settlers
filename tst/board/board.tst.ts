@@ -1,4 +1,4 @@
-import { notStrictEqual, strictEqual } from 'assert'
+import { notStrictEqual, strict, strictEqual } from 'assert'
 import chai from 'chai'
 import Board from '../../src/board/board'
 import Tile from '../../src/board/tile'
@@ -56,6 +56,35 @@ describe('board', () => {
       tokens.find((elt) => elt !== 0),
       undefined
     )
+  })
+})
+
+describe('board longestRoad one cc', () => {
+  it('works for cases 0, 1', () => {
+    const b = new Board()
+    strictEqual(b.roadnetwork.getRoad(0, 1), -1)
+    // Case 1
+    b.roadnetwork.buildRoad(0, 1, 0)
+    b.roadnetwork.buildRoad(1, 2, 0)
+    strictEqual(b.getLongestRoad(0), 2)
+    b.roadnetwork.buildRoad(2, 10, 0)
+    strictEqual(b.getLongestRoad(0), 3)
+
+    // Case 0
+    b.roadnetwork.buildRoad(10, 9, 0)
+    b.roadnetwork.buildRoad(9, 8, 0)
+    b.roadnetwork.buildRoad(8, 0, 0)
+    strictEqual(b.getLongestRoad(0), 6)
+  })
+
+  it('works for case 2a', () => {
+    const b = new Board()
+    b.roadnetwork.buildRoad(0, 1, 0)
+    b.roadnetwork.buildRoad(1, 2, 0)
+    b.roadnetwork.buildRoad(2, 10, 0)
+    b.roadnetwork.buildRoad(10, 11, 0)
+    b.roadnetwork.buildRoad(11, 21, 0)
+    strictEqual(b.getLongestRoad(0), 5)
   })
 })
 

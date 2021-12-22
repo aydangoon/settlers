@@ -88,6 +88,14 @@ export class Graph {
     return children
   }
   public size = () => this.mat.length
+
+  public edgeCount = () => {
+    let count = 0
+    for (let i = 0; i < this.mat.length; i++) {
+      count += this.degree(i)
+    }
+    return Math.floor(count / 2)
+  }
 }
 
 export const connectedComponents = (g: Graph): number[][] => {

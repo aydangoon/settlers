@@ -9,6 +9,7 @@ import {
 import Node from './node'
 import Tile from './tile'
 import {
+  breadthFirstSearch,
   connectedComponents,
   Graph,
   uniformRandom,
@@ -152,6 +153,53 @@ export class Board implements Loggable {
     nodes: number[],
     cycles: { [key: number]: [number, number] } = {}
   ): number {
+    const degreeOne = []
+    const degreeThree = []
+    for (let i = 0; i < g.size(); i++) {
+      const degree = g.degree(i)
+      if (degree === 1) {
+        degreeOne.push(i)
+      } else if (degree === 3) {
+        degreeThree.push(i)
+      }
+    }
+    /**
+     * Case 0: no odd-degree nodes.
+     * In this case eulerian cycle exists so just return the number of edges.
+     */
+    /**
+     * Case 1: 2 odd-degree nodes
+     * In this case same as case 1, eulerian path exists so just return the
+     * number of edges.
+     */
+    if (degreeOne.length + degreeThree.length <= 2) return g.edgeCount()
+
+    /**
+     * Case 2: 2k (for int k > 1) odd-degree nodes.
+     */
+
+    /** Case 2a: There are no nodes with degree 3.
+     *  1. For each node with degree 1 run BFS and return the max
+     *     depth among them..
+     */
+    if (degreeThree.length === 0) {
+      return Math.max(...degreeOne.map((i) => breadthFirstSearch(g, i).depth))
+    }
+
+    /** Case 2b. There is a node with degree 3.
+     *  1. Pick a starting node with degree 3.
+     *  2. Look for a cycle (use BFS to ensure it is minimal).
+     *  2a. If no cycle, go to Case 2a.
+     *  3. Delete every edge on the cycle.
+     *  4. Delete every node that now has degree 0
+     *  5. For every node that was on that cycle and now has degree 1 (so
+     *     every node on the cycle that wasn't deleted in step 4) mark it
+     *     as "(<cycle id>, <len>)"
+     *  6. Repeat this LongestRoad() algorithm for each connected component we just made.
+     *     Very importantly a node marked "LENGTH 6" adds 6 to the path length whenever it
+     *     is considered.
+     */
+    // TODO
     return 0
   }
 
@@ -169,9 +217,12 @@ export class Board implements Loggable {
       const node: Node = this.nodes[i]
       // Check right.
       if (this.roadnetwork.getRoad(i, i + 1) === player) {
-        if (node.getPlayer() !== player) {
+        if (!node.isEmpty() && node.getPlayer() !== player) {
           edges.push([`${i}_l`, `${i + 1}`])
-        } else if (this.nodes[i + 1].getPlayer() !== player) {
+        } else if (
+          !this.nodes[i + 1].isEmpty() &&
+          this.nodes[i + 1].getPlayer() !== player
+        ) {
           edges.push([`${i}`, `${i + 1}_r`])
         } else {
           edges.push([`${i}`, `${i + 1}`])
@@ -181,57 +232,30 @@ export class Board implements Loggable {
       const below: undefined | number = this.roadnetwork
         .adjacentTo(i)
         .filter((id) => id > i + 1)[0]
-      if (below !== undefined && this.roadnetwork.getRoad(i, below)) {
-        if (node.getPlayer() !== player) {
+      if (
+        below !== undefined &&
+        this.roadnetwork.getRoad(i, below) === player
+      ) {
+        if (!node.isEmpty() && node.getPlayer() !== player) {
           edges.push([`${i}_u`, `${below}`])
-        } else if (this.nodes[below].getPlayer() !== player) {
+        } else if (
+          !this.nodes[below].isEmpty() &&
+          this.nodes[below].getPlayer() !== player
+        ) {
           edges.push([`${i}`, `${below}_d`])
         } else {
           edges.push([`${i}`, `${below}`])
         }
       }
     }
+    console.log('edges', edges)
 
+    // Step 1: Run the helper on all connected components.
     const graph = new Graph(edges)
-
     const ccs: number[][] = connectedComponents(graph)
+    const pathLengths = ccs.map((cc) => this.recursiveLongestRoad(graph, cc))
 
-    return Math.max(...ccs.map((cc) => this.recursiveLongestRoad(graph, cc)))
-
-    // Step 1: Run our helper function.
-
-    // LongestRoad(ConnectedComponent) High Level Algorithm
-    /**
-     * Case 0: no odd-degree nodes.
-     * In this case eulerian cycle exists so just return the number of edges.
-     */
-    /**
-     * Case 1: 2 odd-degree nodes
-     * In this case same as case 1, eulerian path exists so just return the
-     * number of edges.
-     */
-    /**
-     * Case 2: 2k (for int k > 1) odd-degree nodes.
-     *
-     * Case 2a: There are no nodes with degree 3.
-     *  1. Pick a node with degree 1 and run BFS.
-     *  2. Return the length of the longest path.
-     *
-     * Case 2b. There is a node with degree 3.
-     *  1. Pick a starting node with degree 3.
-     *  2. Look for a cycle (use BFS to ensure it is minimal).
-     *  2a. If no cycle, go to Case 2a.
-     *  3. Delete every edge on the cycle.
-     *  4. Delete every node that now has degree 0
-     *  5. For every node that was on that cycle and now has degree 1 (so
-     *     every node on the cycle that wasn't deleted in step 4) mark it
-     *     as "(<cycle id>, <len>)"
-     *  6. Repeat this LongestRoad() algorithm for each connected component we just made.
-     *     Very importantly a node marked "LENGTH 6" adds 6 to the path length whenever it
-     *     is considered.
-     */
-    // TODO: implement
-    return 0
+    return Math.max(...pathLengths)
   }
 
   toLog = () => {
