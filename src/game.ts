@@ -23,6 +23,7 @@ import Action, {
   BuildRoadPayload,
   BuildSettlementPayload,
   DiscardPayload,
+  DrawDevCardPayload,
   MoveRobberPayload,
   RobPayload,
   RollPayload,
@@ -266,6 +267,12 @@ export class Game {
     this.turnState = overLimit ? TurnState.Discarding : TurnState.MovingRobber
   }
 
+  private do_drawDevCard(action: Action) {
+    const { card } = action.payload as DrawDevCardPayload
+    this.players[this.turn].devCards.add(card)
+    this.deck.remove(card)
+  }
+
   private do_endTurn() {
     this.freeRoads = 0
     this.turn = (this.turn + 1) % NUM_PLAYERS
@@ -330,8 +337,11 @@ export class Game {
       if (payload.value === undefined) {
         payload.value = rollDie() + rollDie()
       }
-    } else if (action.type === ActionType.DrawDevelopmentCard) {
-      // TODO
+    } else if (action.type === ActionType.DrawDevCard) {
+      const payload = <DrawDevCardPayload>action.payload
+      if (payload.card === undefined) {
+        payload.card = this.deck.pickOneAtRandom()
+      }
     }
 
     // Safely update internal state based on the validated action.

@@ -63,13 +63,11 @@ export class DevCardBundle implements Loggable {
   }
 
   /**
-   * Remove one devcard from the bundle at random.
-   * @returns The devcard that was randomly removed.
+   * Pick one devcard from the bundle at random.
+   * @returns The devcard that was randomly picked.
    */
-  public removeOneAtRandom() {
-    const resToRemove = weightedRandom(this.bundle) as DevCard
-    this.bundle[resToRemove]--
-    return resToRemove
+  public pickOneAtRandom() {
+    return weightedRandom(this.bundle) as DevCard
   }
 
   /**
@@ -88,8 +86,7 @@ export class DevCardBundle implements Loggable {
     return this.size() === 0
   }
 
-  toLog = () =>
-    this.bundle.map((amnt, i) => `${devCardStr(i)}: ${amnt}`).join(', ')
+  toLog = () => this.bundle.map((amnt, i) => `${devCardStr(i)}: ${amnt}`).join(', ')
 }
 
 export default DevCardBundle

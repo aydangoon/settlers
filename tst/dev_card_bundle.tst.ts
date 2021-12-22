@@ -32,7 +32,11 @@ describe('removeOneAtRandom()', () => {
   it('removes a monopoly and vp', () => {
     const b = new DevCardBundle([0, 1, 0, 1, 0])
     assert.strictEqual(b.isEmpty(), false)
-    const things = [b.removeOneAtRandom(), b.removeOneAtRandom()]
+    const elt = b.pickOneAtRandom()
+    b.remove(elt)
+    const elt2 = b.pickOneAtRandom()
+    b.remove(elt2)
+    const things = [elt, elt2]
     assert.strictEqual(things.includes(DevCard.VictoryPoint), true)
     assert.strictEqual(things.includes(DevCard.Monopoly), true)
   })

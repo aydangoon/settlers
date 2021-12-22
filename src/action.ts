@@ -3,6 +3,7 @@
  * @module
  */
 
+import DevCard from './dev_card'
 import Resource from './resource'
 import ResourceBundle from './resource_bundle'
 
@@ -33,7 +34,7 @@ export enum ActionType {
   MakeTradeOffer,
   DecideOnTradeOffer,
 
-  DrawDevelopmentCard,
+  DrawDevCard,
 
   EndTurn,
 }
@@ -43,6 +44,11 @@ export interface ActionPayload {}
 export interface DiscardPayload extends ActionPayload {
   /** The bundle we'll be discarding */
   bundle: ResourceBundle
+}
+
+export interface DrawDevCardPayload extends ActionPayload {
+  /** The card we draw */
+  card: DevCard
 }
 
 export interface RollPayload extends ActionPayload {
