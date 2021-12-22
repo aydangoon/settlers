@@ -1,12 +1,6 @@
 import { notStrictEqual, strict, strictEqual } from 'assert'
 import chai from 'chai'
-import {
-  BFSTraveral,
-  breadthFirstSearch,
-  connectedComponents,
-  Graph,
-  maxTrail,
-} from '../src/utils'
+import { BFSTraveral, breadthFirstSearch, connectedComponents, Graph, maxTrail } from '../src/utils'
 
 describe('graph basic tests', () => {
   it('works :)', () => {
@@ -37,10 +31,6 @@ describe('breadthFirstSearch()', () => {
     ])
     const b: BFSTraveral = breadthFirstSearch(g, 0)
     chai.expect([...b.visited]).to.have.members([0, 1, 2])
-    strictEqual(b.depth, 1)
-
-    const b2: BFSTraveral = breadthFirstSearch(g, 0, true, new Set([0, 1]))
-    chai.expect([...b2.visited]).to.have.members([0, 1])
     strictEqual(b.depth, 1)
   })
 

@@ -77,8 +77,7 @@ export class Graph {
     this.mat[v][u] = false
   }
 
-  public degree = (u: number) =>
-    this.mat[u].reduce((acc, curr) => acc + (curr ? 1 : 0), 0)
+  public degree = (u: number) => this.mat[u].reduce((acc, curr) => acc + (curr ? 1 : 0), 0)
 
   public children = (u: number): number[] => {
     const children: number[] = []
@@ -134,9 +133,7 @@ export function maxTrailRec(v: number, g: Graph, seen: boolean[][]): number {
  * @param src
  */
 export const maxTrail = (g: Graph, src: number): number => {
-  const seen = [...Array(g.size())].map(() =>
-    [...Array(g.size())].map(() => false)
-  )
+  const seen = [...Array(g.size())].map(() => [...Array(g.size())].map(() => false))
   return maxTrailRec(src, g, seen)
 }
 
@@ -167,12 +164,7 @@ export interface BFSTraveral {
   depth: number
 }
 
-export const breadthFirstSearch = (
-  g: Graph,
-  src: number,
-  hasSubset: boolean = false,
-  subset: Set<number> = new Set<number>()
-): BFSTraveral => {
+export const breadthFirstSearch = (g: Graph, src: number): BFSTraveral => {
   const queue = [src]
   const visited = new Set<number>([src])
   const depths: { [key: number]: number } = { [src]: 0 }
@@ -181,9 +173,7 @@ export const breadthFirstSearch = (
     const curr = queue.pop()
     const children = g.children(curr!)
     for (let i = 0; i < children.length; i++) {
-      if ((hasSubset && !subset.has(children[i])) || visited.has(children[i])) {
-        continue
-      }
+      if (visited.has(children[i])) continue
       queue.unshift(children[i])
       visited.add(children[i])
       depths[children[i]] = depths[curr!] + 1
