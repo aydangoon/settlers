@@ -159,15 +159,8 @@ export class Board implements Loggable {
         degreeThree.push(i)
       }
     }
-    /**
-     * Case 0: no odd-degree nodes.
-     * In this case eulerian cycle exists so just return the number of edges.
-     */
-    /**
-     * Case 1: 2 odd-degree nodes
-     * In this case same as case 1, eulerian path exists so just return the
-     * number of edges.
-     */
+
+    // If at most 2 odd-degree, eulerian path exists, just return edgeCount.
     if (degreeOne.length + degreeThree.length <= 2) return g.edgeCount()
 
     const cycle: number[] = findCycle(
@@ -180,11 +173,11 @@ export class Board implements Loggable {
      * Case 2: 2k (for int k > 1) odd-degree nodes.
      */
 
-    /** Case 2a: There are no nodes with degree 3.
+    /** Case 2a: There is no cycle
      *  1. For each node with degree 1 run BFS and return the max
      *     depth among them..
      */
-    if (degreeThree.length === 0 || cycle === null) {
+    if (cycle === null) {
       return Math.max(...degreeOne.map((i) => breadthFirstSearch(g, i).depth))
     }
 
