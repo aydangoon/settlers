@@ -11,6 +11,7 @@ import Tile from './tile'
 import {
   breadthFirstSearch,
   connectedComponents,
+  findCycle,
   Graph,
   uniformRandom,
   weightedRandom,
@@ -144,15 +145,9 @@ export class Board implements Loggable {
    * Given a connected component of well-defined graph `g`, find its longest trail.
    * @param g The graph. Every node degree is on [0, 3].
    * @param nodes The subset of nodes in the graph we consider.
-   * @param cycles Mapping of nodes to [cycle_id, cycle_length]. This
-   * identifies a node as encapsulating a cycle of a certain length.
    * @returns The length of the longest trail.
    */
-  private recursiveLongestRoad(
-    g: Graph,
-    nodes: number[],
-    cycles: { [key: number]: [number, number] } = {}
-  ): number {
+  private recursiveLongestRoad(g: Graph, nodes: number[]): number {
     const degreeOne = []
     const degreeThree = []
     for (let i = 0; i < g.size(); i++) {
@@ -197,8 +192,21 @@ export class Board implements Loggable {
      *     Very importantly a node marked "LENGTH 6" adds 6 to the path length whenever it
      *     is considered.
      */
-    // TODO
-    return 0
+    const cycle: number[] = findCycle(
+      g,
+      degreeThree[0],
+      true,
+      new Set([...nodes])
+    )!
+    for (let i = 0; i < cycle.length; i++) {
+      g.deleteEdge(cycle[i], cycle[(i + 1) % cycle.length])
+    }
+
+    const ccs: number[][] = connectedComponents(g).filter(
+      (elt) => elt.length > 1
+    )
+    const pathLengths = ccs.map((cc) => this.recursiveLongestRoad(g, cc))
+    return cycle.length + Math.max(...pathLengths)
   }
 
   /**
