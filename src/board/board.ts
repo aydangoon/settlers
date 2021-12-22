@@ -13,6 +13,7 @@ import {
   connectedComponents,
   findCycle,
   Graph,
+  maxTrail,
   uniformRandom,
   weightedRandom,
 } from '../utils'
@@ -149,62 +150,16 @@ export class Board implements Loggable {
    */
   private recursiveLongestRoad(g: Graph, nodes: number[]): number {
     console.log('running on', nodes)
-    const degreeOne = []
-    const degreeThree = []
+    const oddDeg = []
     for (let i = 0; i < g.size(); i++) {
-      const degree = g.degree(i)
-      if (degree === 1) {
-        degreeOne.push(i)
-      } else if (degree === 3) {
-        degreeThree.push(i)
-      }
+      if (g.degree(i) % 2 === 1) oddDeg.push(i)
     }
 
     // If at most 2 odd-degree, eulerian path exists, just return edgeCount.
-    if (degreeOne.length + degreeThree.length <= 2) return g.edgeCount()
+    if (oddDeg.length <= 2) return g.edgeCount()
 
-    const cycle: number[] = findCycle(
-      g,
-      degreeThree[0],
-      true,
-      new Set([...nodes])
-    )!
-    /**
-     * Case 2: 2k (for int k > 1) odd-degree nodes.
-     */
-
-    /** Case 2a: There is no cycle
-     *  1. For each node with degree 1 run BFS and return the max
-     *     depth among them..
-     */
-    if (cycle === null) {
-      return Math.max(...degreeOne.map((i) => breadthFirstSearch(g, i).depth))
-    }
-
-    /** Case 2b. There is a node with degree 3.
-     *  1. Pick a starting node with degree 3.
-     *  2. Look for a cycle (use BFS to ensure it is minimal).
-     *  3. Delete every edge on the cycle.
-     *  5. For every node that was on that cycle and now has degree 1 (so
-     *     every node on the cycle that wasn't deleted in step 4) mark it
-     *     as "(<cycle id>, <len>)"
-     *  6. Repeat this LongestRoad() algorithm for each connected component we just made.
-     *     Very importantly a node marked "LENGTH 6" adds 6 to the path length whenever it
-     *     is considered.
-     */
-
-    console.log('found cycle', cycle)
-
-    for (let i = 0; i < cycle.length; i++) {
-      console.log('deleting edge', cycle[i], cycle[(i + 1) % cycle.length])
-      g.deleteEdge(cycle[i], cycle[(i + 1) % cycle.length])
-    }
-
-    const ccs: number[][] = connectedComponents(g).filter(
-      (elt) => elt.length > 1
-    )
-    const pathLengths = ccs.map((cc) => this.recursiveLongestRoad(g, cc))
-    return cycle.length + Math.max(...pathLengths)
+    // run exhaustive path length find from every odd degree node.
+    return Math.max(...oddDeg.map((i) => maxTrail(g, i)))
   }
 
   /**

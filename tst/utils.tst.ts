@@ -6,6 +6,7 @@ import {
   connectedComponents,
   findCycle,
   Graph,
+  maxTrail,
 } from '../src/utils'
 
 describe('graph basic tests', () => {
@@ -115,4 +116,47 @@ describe('findCycle()', () => {
   const c3 = findCycle(g3, 5)
   notStrictEqual(c3, null)
   chai.expect(c3).to.have.members([0, 1, 2])
+})
+
+describe('maxTrail()', () => {
+  it('works :)', () => {
+    const g = new Graph([
+      ['a', 'b'],
+      ['b', 'c'],
+      ['c', 'a'],
+    ])
+    strictEqual(maxTrail(g, 0), 3)
+
+    const hex = new Graph([
+      ['0', '1'],
+      ['1', '2'],
+      ['2', '3'],
+      ['3', '4'],
+      ['4', '5'],
+      ['5', '0'],
+      ['5', '6'],
+      ['6', '7'],
+    ])
+    strictEqual(maxTrail(hex, 7), 8)
+  })
+
+  it('works for double hex problem', () => {
+    const g = new Graph([
+      ['0', '1'],
+      ['1', '2'],
+      ['2', '3'],
+      ['3', '4'],
+      ['4', '5'],
+      ['5', '0'],
+
+      ['5', '6'],
+      ['6', '7'],
+      ['7', '8'],
+      ['8', '9'],
+      ['9', '4'],
+      ['7', 'a'],
+      ['a', 'b'],
+    ])
+    strictEqual(maxTrail(g, g.size() - 1), 12)
+  })
 })

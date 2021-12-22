@@ -98,6 +98,48 @@ export class Graph {
   }
 }
 
+export function maxTrailRec(v: number, g: Graph, seen: boolean[][]): number {
+  const choices = g.children(v).filter((other) => !seen[v][other])
+  let u: number, ret: number
+  if (choices.length === 0) {
+    ret = 0
+  } else if (choices.length === 1) {
+    u = choices[0]
+    seen[u][v] = true
+    seen[v][u] = true
+    ret = 1 + maxTrailRec(u, g, seen)
+    seen[u][v] = false
+    seen[v][u] = false
+  } else {
+    u = choices[0]
+    seen[u][v] = true
+    seen[v][u] = true
+    ret = 1 + maxTrailRec(u, g, seen)
+    seen[u][v] = false
+    seen[v][u] = false
+    u = choices[1]
+    seen[u][v] = true
+    seen[v][u] = true
+    ret = Math.max(ret, 1 + maxTrailRec(u, g, seen))
+    seen[u][v] = false
+    seen[v][u] = false
+  }
+  return ret
+}
+
+/**
+ * maxTrail explores every possible trail that starts at node `src` and
+ * return the max length of all trials.
+ * @param g
+ * @param src
+ */
+export const maxTrail = (g: Graph, src: number): number => {
+  const seen = [...Array(g.size())].map(() =>
+    [...Array(g.size())].map(() => false)
+  )
+  return maxTrailRec(src, g, seen)
+}
+
 export const connectedComponents = (g: Graph): number[][] => {
   let remaining = [...Array(g.size())].map((_, i) => i)
   const ccs: number[][] = []
