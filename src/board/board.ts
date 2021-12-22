@@ -8,7 +8,12 @@ import {
 } from '../constants'
 import Node from './node'
 import Tile from './tile'
-import { uniformRandom, weightedRandom } from '../utils'
+import {
+  connectedComponents,
+  Graph,
+  uniformRandom,
+  weightedRandom,
+} from '../utils'
 import Port from './port'
 import Resource from '../resource'
 import RoadNetwork from './road_network'
@@ -132,6 +137,101 @@ export class Board implements Loggable {
     }
 
     return tiles
+  }
+
+  /**
+   * Given a connected component of well-defined graph `g`, find its longest trail.
+   * @param g The graph. Every node degree is on [0, 3].
+   * @param nodes The subset of nodes in the graph we consider.
+   * @param cycles Mapping of nodes to [cycle_id, cycle_length]. This
+   * identifies a node as encapsulating a cycle of a certain length.
+   * @returns The length of the longest trail.
+   */
+  private recursiveLongestRoad(
+    g: Graph,
+    nodes: number[],
+    cycles: { [key: number]: [number, number] } = {}
+  ): number {
+    return 0
+  }
+
+  /**
+   * Calculates the longest road length of player `player`.
+   * @param player The player number to check.
+   * @returns Length in number of roads.
+   */
+  public getLongestRoad(player: number): number {
+    // Step 0: Preprocessing. Convert player's roads into a graph.
+
+    const edges: [string, string][] = [] // edges to add to our graph.
+
+    for (let i = 0; i < NUM_NODES; i++) {
+      const node: Node = this.nodes[i]
+      // Check right.
+      if (this.roadnetwork.getRoad(i, i + 1) === player) {
+        if (node.getPlayer() !== player) {
+          edges.push([`${i}_l`, `${i + 1}`])
+        } else if (this.nodes[i + 1].getPlayer() !== player) {
+          edges.push([`${i}`, `${i + 1}_r`])
+        } else {
+          edges.push([`${i}`, `${i + 1}`])
+        }
+      }
+      // Check down
+      const below: undefined | number = this.roadnetwork
+        .adjacentTo(i)
+        .filter((id) => id > i + 1)[0]
+      if (below !== undefined && this.roadnetwork.getRoad(i, below)) {
+        if (node.getPlayer() !== player) {
+          edges.push([`${i}_u`, `${below}`])
+        } else if (this.nodes[below].getPlayer() !== player) {
+          edges.push([`${i}`, `${below}_d`])
+        } else {
+          edges.push([`${i}`, `${below}`])
+        }
+      }
+    }
+
+    const graph = new Graph(edges)
+
+    const ccs: number[][] = connectedComponents(graph)
+
+    return Math.max(...ccs.map((cc) => this.recursiveLongestRoad(graph, cc)))
+
+    // Step 1: Run our helper function.
+
+    // LongestRoad(ConnectedComponent) High Level Algorithm
+    /**
+     * Case 0: no odd-degree nodes.
+     * In this case eulerian cycle exists so just return the number of edges.
+     */
+    /**
+     * Case 1: 2 odd-degree nodes
+     * In this case same as case 1, eulerian path exists so just return the
+     * number of edges.
+     */
+    /**
+     * Case 2: 2k (for int k > 1) odd-degree nodes.
+     *
+     * Case 2a: There are no nodes with degree 3.
+     *  1. Pick a node with degree 1 and run BFS.
+     *  2. Return the length of the longest path.
+     *
+     * Case 2b. There is a node with degree 3.
+     *  1. Pick a starting node with degree 3.
+     *  2. Look for a cycle (use BFS to ensure it is minimal).
+     *  2a. If no cycle, go to Case 2a.
+     *  3. Delete every edge on the cycle.
+     *  4. Delete every node that now has degree 0
+     *  5. For every node that was on that cycle and now has degree 1 (so
+     *     every node on the cycle that wasn't deleted in step 4) mark it
+     *     as "(<cycle id>, <len>)"
+     *  6. Repeat this LongestRoad() algorithm for each connected component we just made.
+     *     Very importantly a node marked "LENGTH 6" adds 6 to the path length whenever it
+     *     is considered.
+     */
+    // TODO: implement
+    return 0
   }
 
   toLog = () => {
