@@ -148,6 +148,7 @@ export class Board implements Loggable {
    * @returns The length of the longest trail.
    */
   private recursiveLongestRoad(g: Graph, nodes: number[]): number {
+    console.log('running on', nodes)
     const degreeOne = []
     const degreeThree = []
     for (let i = 0; i < g.size(); i++) {
@@ -169,6 +170,12 @@ export class Board implements Loggable {
      */
     if (degreeOne.length + degreeThree.length <= 2) return g.edgeCount()
 
+    const cycle: number[] = findCycle(
+      g,
+      degreeThree[0],
+      true,
+      new Set([...nodes])
+    )!
     /**
      * Case 2: 2k (for int k > 1) odd-degree nodes.
      */
@@ -177,7 +184,7 @@ export class Board implements Loggable {
      *  1. For each node with degree 1 run BFS and return the max
      *     depth among them..
      */
-    if (degreeThree.length === 0) {
+    if (degreeThree.length === 0 || cycle === null) {
       return Math.max(...degreeOne.map((i) => breadthFirstSearch(g, i).depth))
     }
 
@@ -192,13 +199,11 @@ export class Board implements Loggable {
      *     Very importantly a node marked "LENGTH 6" adds 6 to the path length whenever it
      *     is considered.
      */
-    const cycle: number[] = findCycle(
-      g,
-      degreeThree[0],
-      true,
-      new Set([...nodes])
-    )!
+
+    console.log('found cycle', cycle)
+
     for (let i = 0; i < cycle.length; i++) {
+      console.log('deleting edge', cycle[i], cycle[(i + 1) % cycle.length])
       g.deleteEdge(cycle[i], cycle[(i + 1) % cycle.length])
     }
 
@@ -256,7 +261,11 @@ export class Board implements Loggable {
     }
 
     // Step 1: Run the helper on all connected components.
+    console.log(edges)
     const graph = new Graph(edges)
+    for (let i = 0; i < graph.size(); i++) {
+      console.log(i, ':', graph.children(i))
+    }
     const ccs: number[][] = connectedComponents(graph)
     const pathLengths = ccs.map((cc) => this.recursiveLongestRoad(graph, cc))
 
