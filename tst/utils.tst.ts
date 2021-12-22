@@ -68,7 +68,8 @@ describe('connectedComponents()', () => {
     ])
     const ccs = connectedComponents(g)
     strictEqual(ccs.length, 1)
-    chai.expect(ccs[0]).to.have.members([0, 1, 2])
+    strictEqual(ccs[0].hasEdge(0, 1), true)
+    strictEqual(ccs[0].hasEdge(2, 1), true)
   })
 
   it('works for multiple cc', () => {
@@ -80,9 +81,8 @@ describe('connectedComponents()', () => {
     ])
     const ccs = connectedComponents(g)
     strictEqual(ccs.length, 3)
-    chai.expect(ccs[0]).to.have.members([0, 1, 2])
-    chai.expect(ccs[1]).to.have.members([3, 4])
-    chai.expect(ccs[2]).to.have.members([5, 6])
+    strictEqual(ccs[0].hasEdge(0, 1), true)
+    strictEqual(ccs[0].hasEdge(1, 2), true)
   })
 })
 

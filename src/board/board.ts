@@ -148,8 +148,7 @@ export class Board implements Loggable {
    * @param nodes The subset of nodes in the graph we consider.
    * @returns The length of the longest trail.
    */
-  private recursiveLongestRoad(g: Graph, nodes: number[]): number {
-    console.log('running on', nodes)
+  private recursiveLongestRoad(g: Graph): number {
     const oddDeg = []
     for (let i = 0; i < g.size(); i++) {
       if (g.degree(i) % 2 === 1) oddDeg.push(i)
@@ -209,13 +208,9 @@ export class Board implements Loggable {
     }
 
     // Step 1: Run the helper on all connected components.
-    console.log(edges)
     const graph = new Graph(edges)
-    for (let i = 0; i < graph.size(); i++) {
-      console.log(i, ':', graph.children(i))
-    }
-    const ccs: number[][] = connectedComponents(graph)
-    const pathLengths = ccs.map((cc) => this.recursiveLongestRoad(graph, cc))
+    const ccs: Graph[] = connectedComponents(graph)
+    const pathLengths = ccs.map((cc) => this.recursiveLongestRoad(cc))
 
     return Math.max(...pathLengths)
   }

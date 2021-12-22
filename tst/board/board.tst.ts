@@ -112,8 +112,8 @@ describe('board longestRoad one cc', () => {
     strictEqual(b.getLongestRoad(0), 11)
 
     b.roadnetwork.buildRoad(12, 13, 0)
-    //b.roadnetwork.buildRoad(13, 14, 0)
-    strictEqual(b.getLongestRoad(0), 11)
+    b.roadnetwork.buildRoad(13, 14, 0)
+    strictEqual(b.getLongestRoad(0), 12)
   })
 })
 

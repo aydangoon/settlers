@@ -140,7 +140,7 @@ export const maxTrail = (g: Graph, src: number): number => {
   return maxTrailRec(src, g, seen)
 }
 
-export const connectedComponents = (g: Graph): number[][] => {
+export const connectedComponents = (g: Graph): Graph[] => {
   let remaining = [...Array(g.size())].map((_, i) => i)
   const ccs: number[][] = []
   while (remaining.length > 0) {
@@ -149,7 +149,17 @@ export const connectedComponents = (g: Graph): number[][] => {
     ccs.push([...visited])
     remaining = remaining.filter((elt) => !visited.has(elt))
   }
-  return ccs
+
+  // Kinda cringe but it has to be done.
+  return ccs.map((cc) => {
+    const edges: [string, string][] = []
+    cc.forEach((u) => {
+      cc.forEach((v) => {
+        if (g.hasEdge(u, v)) edges.push([u.toString(), v.toString()])
+      })
+    })
+    return new Graph(edges)
+  })
 }
 
 export const findCycle = (
