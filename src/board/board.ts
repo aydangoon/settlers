@@ -189,9 +189,7 @@ export class Board implements Loggable {
     /** Case 2b. There is a node with degree 3.
      *  1. Pick a starting node with degree 3.
      *  2. Look for a cycle (use BFS to ensure it is minimal).
-     *  2a. If no cycle, go to Case 2a.
      *  3. Delete every edge on the cycle.
-     *  4. Delete every node that now has degree 0
      *  5. For every node that was on that cycle and now has degree 1 (so
      *     every node on the cycle that wasn't deleted in step 4) mark it
      *     as "(<cycle id>, <len>)"
@@ -248,7 +246,6 @@ export class Board implements Loggable {
         }
       }
     }
-    console.log('edges', edges)
 
     // Step 1: Run the helper on all connected components.
     const graph = new Graph(edges)

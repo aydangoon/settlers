@@ -1,9 +1,10 @@
-import { strict, strictEqual } from 'assert'
+import { notStrictEqual, strict, strictEqual } from 'assert'
 import chai from 'chai'
 import {
   BFSTraveral,
   breadthFirstSearch,
   connectedComponents,
+  findCycle,
   Graph,
 } from '../src/utils'
 
@@ -82,4 +83,36 @@ describe('connectedComponents()', () => {
     chai.expect(ccs[1]).to.have.members([3, 4])
     chai.expect(ccs[2]).to.have.members([5, 6])
   })
+})
+
+describe('findCycle()', () => {
+  it('works :)', () => {
+    const g = new Graph([
+      ['a', 'b'],
+      ['b', 'c'],
+      ['c', 'a'],
+    ])
+    const c = findCycle(g, 0)
+    notStrictEqual(c, null)
+    chai.expect(c).to.have.members([0, 1, 2])
+
+    const g2 = new Graph([
+      ['a', 'b'],
+      ['b', 'c'],
+      ['c', 'd'],
+    ])
+    strictEqual(findCycle(g2, 0), null)
+  })
+
+  const g3 = new Graph([
+    ['a', 'b'],
+    ['b', 'c'],
+    ['c', 'a'],
+    ['c', 'd'],
+    ['d', 'e'],
+    ['d', 'f'],
+  ])
+  const c3 = findCycle(g3, 5)
+  notStrictEqual(c3, null)
+  chai.expect(c3).to.have.members([0, 1, 2])
 })
