@@ -1,11 +1,12 @@
-import Resource from './resource'
+import Resource, { resStr } from './resource'
 import { NUM_RESOURCE_TYPES } from './constants'
 import { weightedRandom } from './utils'
+import Loggable from './loggable'
 
 /**
  * A collection of resources.
  */
-export class ResourceBundle {
+export class ResourceBundle implements Loggable {
   private bundle: number[]
 
   /**
@@ -25,17 +26,28 @@ export class ResourceBundle {
 
   constructor(...args: any[]) {
     if (args.length === 0) {
-      this.bundle = new Array(NUM_RESOURCE_TYPES).fill(0) as number[]
+      this.bundle = [...Array(NUM_RESOURCE_TYPES)].map(() => 0) as number[]
     } else if (typeof args[0] === 'number') {
       const [amnt] = args as [number]
-      this.bundle = new Array(NUM_RESOURCE_TYPES).fill(amnt) as number[]
+      this.bundle = [...Array(NUM_RESOURCE_TYPES)].map(() => amnt) as number[]
     } else {
       const [amnts] = args as [number[]]
-      this.bundle = new Array(NUM_RESOURCE_TYPES) as number[]
+      this.bundle = [...Array(NUM_RESOURCE_TYPES)] as number[]
       for (let i = 0; i < NUM_RESOURCE_TYPES; i++) this.bundle[i] = amnts[i]
     }
   }
 
+  /**
+   * Determine if `bundle` is a subset of this bundle.
+   * @param bundle
+   * @returns boolean indicating if `bundle` is a subset.
+   */
+  public has(bundle: ResourceBundle): boolean {
+    for (let i = 0; i < NUM_RESOURCE_TYPES; i++) {
+      if (this.bundle[i] < bundle.get(i)) return false
+    }
+    return true
+  }
   /**
    *
    * @param resource The resource we want the amount of.
@@ -136,6 +148,13 @@ export class ResourceBundle {
   public isEmpty() {
     return this.size() === 0
   }
+
+  public static roadCost = new ResourceBundle([1, 1, 0, 0, 0])
+  public static settlementCost = new ResourceBundle([1, 1, 0, 1, 1])
+  public static cityCost = new ResourceBundle([0, 0, 3, 2, 0])
+  public static devCardCost = new ResourceBundle([0, 0, 1, 1, 1])
+
+  toLog = () => this.bundle.map((amnt, i) => `${resStr(i)}: ${amnt}`).join(', ')
 }
 
 export default ResourceBundle

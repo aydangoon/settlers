@@ -7,6 +7,24 @@ export enum Resource {
   Ore,
   Grain,
   Wool,
+  None,
+}
+
+export const resStr = (res: Resource) => {
+  switch (res) {
+    case Resource.Brick:
+      return 'brick'
+    case Resource.Lumber:
+      return 'lumber'
+    case Resource.Ore:
+      return 'ore'
+    case Resource.Grain:
+      return 'grain'
+    case Resource.Wool:
+      return 'wool'
+    default:
+      'none'
+  }
 }
 
 export default Resource

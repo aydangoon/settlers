@@ -4,13 +4,31 @@
  * @module
  */
 
-import { NUM_EACH_RESOURCE, NUM_PLAYERS } from './constants'
+import {
+  NUM_EACH_RESOURCE,
+  NUM_KNIGHTS,
+  NUM_VPS,
+  NUM_MONOPOLY,
+  NUM_PLAYERS,
+  NUM_ROAD_BUILDING,
+  NUM_YEAR_OF_PLENTY,
+  NUM_RESOURCE_TYPES,
+  ROBBER_LIMIT,
+} from './constants'
 import Player from './player'
 import ResourceBundle from './resource_bundle'
-import Action, { ActionType } from './action'
-import Event, { RollEvent } from './event'
+import Action, {
+  ActionType,
+  BuildRoadPayload,
+  BuildSettlementPayload,
+  RollPayload,
+} from './action'
 import isValidTransition, { TurnState } from './turn_fsm'
 import { rollDie } from './utils'
+import DevCardBundle from './dev_card_bundle'
+import Board from './board/board'
+import Node from './board/node'
+import Resource from './resource'
 
 /**
  * Enum of game phases.
@@ -25,6 +43,10 @@ export enum GamePhase {
 export class Game {
   /** A resource bundle for the bank. */
   private bank: ResourceBundle
+  /** The dev card deck. */
+  private deck: DevCardBundle
+  /** The board. */
+  private board: Board
   /** The current turn number takes on a value of: [0, NUM_PLAYERS] */
   private turn: number
   /** List of player objects. Indexable by player number. */
@@ -33,36 +55,149 @@ export class Game {
   private phase: GamePhase
   /** The current turn's state, i.e. Postroll, preroll, etc. */
   private turnState: TurnState
-
-  // Some variables needed only for the setup phase.
-  private setup_settlementPlaced: boolean
+  /** The number of roads the current turn's player can place for no cost. */
+  private freeRoads: number
+  /** Boolean list of players who still need to submit discard actions. */
+  private mustDiscard: boolean[]
 
   constructor() {
     this.bank = new ResourceBundle(NUM_EACH_RESOURCE)
+    this.deck = new DevCardBundle([
+      NUM_KNIGHTS,
+      NUM_VPS,
+      NUM_YEAR_OF_PLENTY,
+      NUM_MONOPOLY,
+      NUM_ROAD_BUILDING,
+    ])
+    this.board = new Board()
     this.turn = 0
-    this.players = new Array(NUM_PLAYERS).fill(new Player())
-
-    // TODO board initialization, shuffle development cards, ports, etc.
+    this.players = [...Array(NUM_PLAYERS)].map(() => new Player())
+    this.freeRoads = 0
 
     this.phase = GamePhase.SetupForward
-    this.setup_settlementPlaced = false
+
     this.turnState = TurnState.SetupSettlement
+    this.mustDiscard = [...Array(NUM_PLAYERS)].map(() => false)
   }
 
   // ============================ can_ helper methods ==========================
 
   // can_ prefixed functions are helpers to check if an action is allowed given
-  // game's state.
+  // game's state. These **dont** change game state.
 
   // ============================ do_ helper methods ============================
 
-  // do_ prefixed functions are helpers to handle their respective events.
+  // do_ prefixed functions are helpers to actually do their respective actions.
+  // these **change** game state.
 
-  private do_roll(event: RollEvent) {
-    // TODO hand out resources based on event.value
+  private do_roll(payload: RollPayload) {
+    if (payload.value !== 7) {
+      // Standard case. Hand out resources.
 
-    // Update turn state.
-    this.turnState = TurnState.Postroll
+      // Production for each player.
+      const production: ResourceBundle[] = [...Array(NUM_PLAYERS)].map(
+        () => new ResourceBundle()
+      )
+
+      // For every tile, update the production of each player.
+      this.board.tiles
+        .filter(
+          (tile, i) =>
+            this.board.robber !== i && tile.getNumber() === payload.value
+        )
+        .forEach((tile) => {
+          tile.nodes.forEach((nodeid) => {
+            const node = this.board.nodes[nodeid]
+            if (!node.isEmpty()) {
+              production[node.getPlayer()].add(
+                tile.resource,
+                node.hasCity() ? 2 : 1
+              )
+            }
+          })
+        })
+
+      // Check if the bank has enough of each resource.
+      for (let i = 0; i < NUM_RESOURCE_TYPES; i++) {
+        const sum = production.reduce(
+          (acc, bundle) => acc + bundle.get(i as Resource),
+          0
+        )
+        // If there is not enough of a resource, noone gets it.
+        if (sum > this.bank.get(i as Resource)) {
+          production.forEach((bundle) => bundle.removeAll(i as Resource))
+        }
+      }
+
+      // Finally distribute the production bundles to their respective players.
+      production.forEach((bundle, i) => this.players[i].resources.add(bundle))
+
+      this.turnState = TurnState.Postroll
+    } else {
+      // Robber case.
+      this.mustDiscard = this.players.map(
+        ({ resources }) => resources.size() > ROBBER_LIMIT
+      )
+
+      const overLimit = this.mustDiscard.reduce(
+        (acc, curr) => acc || curr,
+        false
+      )
+
+      // If someone is over the limit, we move to discarding state before moving robber.
+      // Otherwise we just move to moving robber state.
+      this.turnState = overLimit ? TurnState.Discarding : TurnState.MovingRobber
+    }
+  }
+
+  private do_buildSettlement(payload: BuildSettlementPayload) {
+    if (this.phase === GamePhase.Playing) {
+      // TODO: Regular case.
+    } else {
+      // Setup case. just build the settlement where requested.
+      this.board.nodes[payload.node].buildSettlement(this.turn)
+      // If this is our second setup phase settlement, collect resources.
+      if (this.phase === GamePhase.SetupBackward) {
+        this.board.tiles
+          .filter(({ nodes }) => nodes.includes(payload.node))
+          .forEach(({ resource }) =>
+            this.players[this.turn].resources.add(resource, 1)
+          )
+      }
+      this.turnState = TurnState.SetupRoad
+    }
+  }
+
+  private do_buildRoad(payload: BuildRoadPayload) {
+    const { node0, node1 } = payload
+    if (this.phase === GamePhase.Playing) {
+      // TODO: Regular case.
+    } else {
+      // Setup case. just build the road where requested.
+      this.board.roadnetwork.buildRoad(node0, node1, this.turn)
+      if (this.phase === GamePhase.SetupForward) {
+        if (this.turn === NUM_PLAYERS - 1) {
+          this.phase = GamePhase.SetupBackward
+        } else {
+          this.turn++
+        }
+        this.turnState = TurnState.SetupSettlement
+      } else {
+        if (this.turn === 0) {
+          this.phase = GamePhase.Playing
+          this.turnState = TurnState.Preroll
+        } else {
+          this.turn--
+          this.turnState = TurnState.SetupSettlement
+        }
+      }
+    }
+  }
+
+  private do_endTurn() {
+    this.freeRoads = 0
+    this.turn = (this.turn + 1) % NUM_PLAYERS
+    this.turnState = TurnState.Preroll
   }
 
   /**
@@ -71,7 +206,7 @@ export class Game {
    * @param requester The player number who requested the action
    * @returns Boolean indicating if the action is valid.
    */
-  private isValid(action: Action, requester: number): boolean {
+  private isValidAction(action: Action, requester: number): boolean {
     // Is this action restricted only to the player of the current turn?
     if (
       requester != this.turn &&
@@ -96,52 +231,43 @@ export class Game {
     }
   }
 
-  /**
-   * Get a deterministic, atomic event from an action.
-   * @param action
-   * @returns An event generated from the action `action`
-   */
-  private generateEventFrom(action: Action): Event {
-    switch (action.type) {
-      case ActionType.Roll:
-        const value = rollDie() + rollDie()
-        return new RollEvent(value, action)
-      default:
-        return new Event(action)
+  private doAction(action: Action): void {
+    const { payload, type } = action
+    if (type === ActionType.Roll) {
+      this.do_roll(payload as RollPayload)
+    } else if (type === ActionType.EndTurn) {
+      this.do_endTurn()
     }
   }
 
   // ============================ Public Interface ============================
 
   /**
-   * Check if an action is valid, generate an event from it, and do that event.
+   * Check if an action is valid, make action deterministic (edge cases), then do the action.
    * @param action The action to be handled.
    * @param requester Player number who requested the action.
-   * @returns `null` if `action` is invalid, the generated event otherwise.
+   * @returns `null` if `action` is invalid, the completed, valid action otherwise.
    */
-  public handleAction(action: Action, requester: number): null | Event {
+  public handleAction(action: Action, requester: number): null | Action {
     // Determine if the action can be done given current game state.
-    if (!this.isValid(action, requester)) return null
+    if (!this.isValidAction(action, requester)) return null
 
-    // Generate an event from the valid action.
-    const event = this.generateEventFrom(action)
-
-    // update internal state based on this event.
-    this.doEvent(event)
-
-    // return the event.
-    return event
-  }
-
-  /**
-   * Do an event. This function is **agnostic** of game state and will simply
-   * attempt to apply the specified event to the game.
-   * @param event The event to be done.
-   */
-  public doEvent(event: Event): void {
-    if (event.action.type === ActionType.Roll) {
-      this.do_roll(<RollEvent>event)
+    // The two edge cases where we need to update our action's payload due
+    // to randomness
+    if (action.type === ActionType.Roll) {
+      const payload = <RollPayload>action.payload
+      if (payload.value === undefined) {
+        payload.value = rollDie() + rollDie()
+      }
+    } else if (action.type === ActionType.DrawDevelopmentCard) {
+      // TODO
     }
+
+    // Safely update internal state based on the validated action.
+    this.doAction(action)
+
+    // return the completed, valid action.
+    return action
   }
 }
 

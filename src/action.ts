@@ -30,10 +30,17 @@ export enum ActionType {
   MakeTradeOffer,
   DecideOnTradeOffer,
 
+  DrawDevelopmentCard,
+
   EndTurn,
 }
 
 export interface ActionPayload {}
+
+export interface RollPayload extends ActionPayload {
+  /** the value of the dice sum. */
+  value: number
+}
 
 export interface MoveRobberPayload extends ActionPayload {
   /** The tile number we want to move the robber to. */
@@ -67,7 +74,8 @@ export interface BuildCityPayload extends ActionPayload {
 
 export interface BuildRoadPayload extends ActionPayload {
   /** The edge number we want to build a settlement on. */
-  edge: number
+  node0: number
+  node1: number
 }
 
 /**
@@ -79,8 +87,8 @@ export interface BuildRoadPayload extends ActionPayload {
  *
  * Actions link between turn states in the turn state finite state machine.
  *
- * A valid action produces an event. An event can be applied to a `Game` object to update
- * its state in a predictable and safe manner.
+ * A verified action can be applied to game state to update it in a safe and predictable
+ * manner.
  */
 export class Action {
   /** The type of the action. */
