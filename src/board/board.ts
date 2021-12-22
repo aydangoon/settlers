@@ -8,15 +8,7 @@ import {
 } from '../constants'
 import Node from './node'
 import Tile from './tile'
-import {
-  breadthFirstSearch,
-  connectedComponents,
-  findCycle,
-  Graph,
-  maxTrail,
-  uniformRandom,
-  weightedRandom,
-} from '../utils'
+import { connectedComponents, Graph, maxTrail, weightedRandom } from '../utils'
 import Port from './port'
 import Resource from '../resource'
 import RoadNetwork from './road_network'

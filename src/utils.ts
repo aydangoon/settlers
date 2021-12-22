@@ -162,47 +162,6 @@ export const connectedComponents = (g: Graph): Graph[] => {
   })
 }
 
-export const findCycle = (
-  g: Graph,
-  src: number,
-  hasSubset: boolean = false,
-  subset: Set<number> = new Set<number>()
-) => {
-  const visited = new Set<number>()
-  const parent: { [key: number]: number } = { [src]: -1 }
-  return cycleHelper(g, src, hasSubset, subset, visited, parent)
-}
-
-const cycleHelper = (
-  g: Graph,
-  curr: number,
-  hasSubset: boolean,
-  subset: Set<number>,
-  visited: Set<number>,
-  parent: { [key: number]: number }
-): number[] | null => {
-  visited.add(curr)
-  const children = g.children(curr)
-  //console.log('on', curr, children)
-  for (let i = 0; i < children.length; i++) {
-    if (children[i] === parent[curr]) continue
-    if (hasSubset && !subset.has(children[i])) continue
-    if (visited.has(children[i])) {
-      const cycle = []
-      do {
-        cycle.push(curr)
-        curr = parent[curr]
-      } while (curr !== children[i])
-      cycle.push(children[i])
-      return cycle
-    }
-    parent[children[i]] = curr
-    let res = cycleHelper(g, children[i], hasSubset, subset, visited, parent)
-    if (res !== null) return res
-  }
-  return null
-}
-
 export interface BFSTraveral {
   visited: Set<number>
   depth: number
