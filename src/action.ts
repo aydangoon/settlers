@@ -6,6 +6,7 @@
 import DevCard from './dev_card'
 import Resource from './resource'
 import ResourceBundle from './resource_bundle'
+import TradeOffer, { TradeStatus } from './trade_offer'
 
 /**
  * All possible types of actions.
@@ -40,6 +41,21 @@ export enum ActionType {
 }
 
 export interface ActionPayload {}
+
+export interface MakeTradeOfferPayload extends ActionPayload {
+  /** What is the actual offer lol */
+  offer: ResourceBundle
+  request: ResourceBundle
+}
+
+export interface TradeOfferDecisionPayload extends ActionPayload {
+  /** The decision. */
+  status: TradeStatus
+  /** The id of the trade. */
+  id: number
+  /** The player we are agreeing to do the trade with. Only needed by host. */
+  player?: number
+}
 
 export interface DiscardPayload extends ActionPayload {
   /** The bundle we'll be discarding */

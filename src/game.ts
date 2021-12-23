@@ -24,11 +24,13 @@ import Action, {
   BuildSettlementPayload,
   DiscardPayload,
   DrawDevCardPayload,
+  MakeTradeOfferPayload,
   MoveRobberPayload,
   RobPayload,
   RollPayload,
   SelectMonopolyResourcePayload,
   SelectYearOfPlentyResourcesPayload,
+  TradeOfferDecisionPayload,
 } from './action'
 import isValidTransition, { TurnState } from './turn_fsm'
 import { rollDie } from './utils'
@@ -37,6 +39,7 @@ import Board from './board/board'
 import Node from './board/node'
 import Resource from './resource'
 import DevCard from './dev_card'
+import TradeOffer, { TradeStatus } from './trade_offer'
 
 /**
  * Enum of game phases.
@@ -59,6 +62,8 @@ export class Game {
   private turn: number
   /** List of player objects. Indexable by player number. */
   private players: Player[]
+  /** A list of open trade offers in the current turn. */
+  private tradeOffers: TradeOffer[]
   /** The current phase of the game. */
   private phase: GamePhase
   /** The current turn's state, i.e. Postroll, preroll, etc. */
@@ -82,6 +87,7 @@ export class Game {
     this.board = new Board()
     this.turn = 0
     this.players = [...Array(NUM_PLAYERS)].map(() => new Player())
+    this.tradeOffers = []
     this.freeRoads = 0
     this.hasRolled = false
 
@@ -273,11 +279,51 @@ export class Game {
     this.deck.remove(card)
   }
 
+  // Trades
+
+  private do_makeTradeOffer(action: Action) {
+    const { offer, request } = action.payload as MakeTradeOfferPayload
+    const id =
+      this.tradeOffers.length > 0 ? this.tradeOffers[this.tradeOffers.length - 1].id + 1 : 0
+    const tradeOffer = new TradeOffer(id, action.player, offer, request)
+  }
+
+  private do_decideOnTradeOffer(action: Action) {
+    const { status, player, id } = action.payload as TradeOfferDecisionPayload
+    const index = this.tradeOffers.findIndex((to) => to.id === id)
+    const tradeOffer: TradeOffer = this.tradeOffers[index]
+
+    if (tradeOffer.offerer === action.player) {
+      if (status === TradeStatus.Decline) {
+        // Case 0: Closing a trade offer we own.
+        this.tradeOffers.splice(index, 1)
+      } else if (player !== undefined) {
+        // Case 1: Trading with a player who accepted our offer.
+        ResourceBundle.trade(
+          tradeOffer.request,
+          this.players[player].resources,
+          tradeOffer.offer,
+          this.players[action.player].resources
+        )
+        this.tradeOffers.splice(index, 1)
+      }
+    } else {
+      // Case 2: Change our status on some other trade offer.
+      tradeOffer.status[action.player] = status
+
+      // If our declination means everyone declined, delete the offer.
+      if (status === TradeStatus.Decline && tradeOffer.allDeclined()) {
+        this.tradeOffers.splice(index, 1)
+      }
+    }
+  }
+
   private do_endTurn() {
     this.freeRoads = 0
     this.turn = (this.turn + 1) % NUM_PLAYERS
     this.hasRolled = false
     this.turnState = TurnState.Preroll
+    this.tradeOffers = []
   }
 
   /**
