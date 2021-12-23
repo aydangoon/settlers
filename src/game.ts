@@ -36,7 +36,6 @@ import isValidTransition, { TurnState } from './turn_fsm'
 import { rollDie } from './utils'
 import DevCardBundle from './dev_card_bundle'
 import Board from './board/board'
-import Node from './board/node'
 import Resource from './resource'
 import DevCard from './dev_card'
 import TradeOffer, { TradeStatus } from './trade_offer'
@@ -177,7 +176,11 @@ export class Game {
     const { node0, node1 } = action.payload as BuildRoadPayload
     if (this.phase === GamePhase.Playing) {
       this.board.roadnetwork.buildRoad(node0, node1, this.turn)
-      this.players[this.turn].resources.subtract(ResourceBundle.roadCost)
+      if (this.freeRoads === 0) {
+        this.players[this.turn].resources.subtract(ResourceBundle.roadCost)
+      } else {
+        this.freeRoads--
+      }
     } else {
       // Setup case. just build the road where requested.
       this.board.roadnetwork.buildRoad(node0, node1, this.turn)
@@ -216,7 +219,11 @@ export class Game {
   private do_moveRobber(action: Action) {
     const { to } = action.payload as MoveRobberPayload
     this.board.robber = to
-    this.turnState = TurnState.Robbing
+    if (this.board.playersOnRobber().find((p) => p !== this.turn) !== undefined) {
+      this.turnState = TurnState.Robbing
+    } else {
+      this.turnState = this.hasRolled ? TurnState.Postroll : TurnState.Preroll
+    }
   }
 
   private do_Rob(action: Action) {

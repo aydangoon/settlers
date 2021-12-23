@@ -186,6 +186,18 @@ export class Board implements Loggable {
     return Math.max(...ccs.map((cc) => this.longestRoadOn(cc)))
   }
 
+  public playersOnRobber(): number[] {
+    return this.robber !== -1
+      ? [
+          ...new Set(
+            this.tiles[this.robber].nodes
+              .filter((nid) => !this.nodes[nid].isEmpty())
+              .map((nid) => this.nodes[nid].getPlayer())
+          ),
+        ]
+      : []
+  }
+
   toLog = () => {
     const max = 11
     const rowSize = [max - 4, max - 2, max, max, max - 2, max - 4]
