@@ -115,20 +115,26 @@ export class Game {
       const production: ResourceBundle[] = [...Array(NUM_PLAYERS)].map(() => new ResourceBundle())
 
       // For every tile, update the production of each player.
-      this.board.tiles
-        .filter((tile, i) => this.board.robber !== i && tile.getNumber() === value)
-        .forEach((tile) => {
-          tile.nodes.forEach((nodeid) => {
-            const node = this.board.nodes[nodeid]
-            if (!node.isEmpty()) {
-              production[node.getPlayer()].add(tile.resource, node.hasCity() ? 2 : 1)
-            }
-          })
-        })
+      const prodTiles = this.board.tiles.filter(
+        (tile, i) => this.board.robber !== i && tile.getNumber() === value
+      )
+
+      for (let i = 0; i < prodTiles.length; i++) {
+        const tile = prodTiles[i]
+        for (let j = 0; j < tile.nodes.length; j++) {
+          const node = this.board.nodes[tile.nodes[j]]
+          if (!node.isEmpty()) {
+            production[node.getPlayer()].add(tile.resource, node.hasCity() ? 2 : 1)
+          }
+        }
+      }
 
       // Check if the bank has enough of each resource.
       for (let i = 0; i < NUM_RESOURCE_TYPES; i++) {
-        const sum = production.reduce((acc, bundle) => acc + bundle.get(i as Resource), 0)
+        let sum = 0
+        for (let j = 0; j < production.length; j++) {
+          sum += production[j].get(i as Resource)
+        }
         // If there is not enough of a resource, noone gets it.
         if (sum > this.bank.get(i as Resource)) {
           production.forEach((bundle) => bundle.removeAll(i as Resource))
@@ -136,7 +142,9 @@ export class Game {
       }
 
       // Finally distribute the production bundles to their respective players.
-      production.forEach((bundle, i) => this.players[i].resources.add(bundle))
+      for (let i = 0; i < production.length; i++) {
+        this.players[i].resources.add(production[i])
+      }
 
       this.turnState = TurnState.Postroll
     } else {
@@ -240,11 +248,11 @@ export class Game {
 
   private do_selectMonopolyResource(action: Action) {
     const { resource } = action.payload as SelectMonopolyResourcePayload
-    this.players.forEach((player, i) => {
-      if (i === this.turn) return
-      const amnt = player.resources.removeAll(resource)
+    for (let i = 0; i < NUM_PLAYERS; i++) {
+      if (i === this.turn) continue
+      const amnt = this.players[i].resources.removeAll(resource)
       this.players[this.turn].resources.add(resource, amnt)
-    })
+    }
     this.turnState = this.hasRolled ? TurnState.Postroll : TurnState.Preroll
   }
 
@@ -255,10 +263,10 @@ export class Game {
 
   private do_selectYearOfPlentyResources(action: Action) {
     const { resources } = action.payload as SelectYearOfPlentyResourcesPayload
-    resources.forEach((res) => {
-      this.players[this.turn].resources.add(res, 1)
-      this.bank.subtract(res, 1)
-    })
+    for (let i = 0; i < 2; i++) {
+      this.players[this.turn].resources.add(i as Resource, 1)
+      this.bank.subtract(i as Resource, 1)
+    }
     this.turnState = this.hasRolled ? TurnState.Postroll : TurnState.Preroll
   }
 
@@ -333,13 +341,53 @@ export class Game {
     this.tradeOffers = []
   }
 
+  private doAction(action: Action): void {
+    const { type } = action
+    if (type === ActionType.Roll) {
+      this.do_roll(action)
+    } else if (type === ActionType.PlayRobber) {
+      this.do_playRobber()
+    } else if (type === ActionType.MoveRobber) {
+      this.do_moveRobber(action)
+    } else if (type === ActionType.Rob) {
+      this.do_Rob(action)
+    } else if (type === ActionType.PlayMonopoly) {
+      this.do_playMonopoly()
+    } else if (type === ActionType.SelectMonopolyResource) {
+      this.do_selectMonopolyResource(action)
+    } else if (type === ActionType.PlayYearOfPlenty) {
+      this.do_playYearOfPlenty()
+    } else if (type === ActionType.SelectYearOfPlentyResources) {
+      this.do_selectYearOfPlentyResources(action)
+    } else if (type === ActionType.PlayRoadBuilder) {
+      this.do_playRoadBuilder()
+    } else if (type === ActionType.BuildSettlement) {
+      this.do_buildSettlement(action)
+    } else if (type === ActionType.BuildCity) {
+      this.do_buildCity(action)
+    } else if (type === ActionType.BuildRoad) {
+      this.do_buildRoad(action)
+    } else if (type === ActionType.Discard) {
+      this.do_discard(action)
+    } else if (type === ActionType.MakeTradeOffer) {
+      this.do_makeTradeOffer(action)
+    } else if (type === ActionType.DecideOnTradeOffer) {
+      this.do_decideOnTradeOffer(action)
+    } else if (type === ActionType.DrawDevCard) {
+      this.do_drawDevCard(action)
+    } else {
+      this.do_endTurn()
+    }
+  }
+
+  // ============================ Public Interface ============================
+
   /**
    * Check if an action is valid.
    * @param action The action requested to be done
-   * @param requester The player number who requested the action
    * @returns Boolean indicating if the action is valid.
    */
-  private isValidAction(action: Action): boolean {
+  public isValidAction(action: Action): boolean {
     // Is this action restricted only to the player of the current turn?
     if (
       action.player != this.turn &&
@@ -361,17 +409,6 @@ export class Game {
         return true
     }
   }
-
-  private doAction(action: Action): void {
-    const { type } = action
-    if (type === ActionType.Roll) {
-      this.do_roll(action)
-    } else if (type === ActionType.EndTurn) {
-      this.do_endTurn()
-    }
-  }
-
-  // ============================ Public Interface ============================
 
   /**
    * Check if an action is valid, make action deterministic (edge cases), then do the action.

@@ -50,19 +50,21 @@ export class Graph {
     const idMap: { [key: string]: number } = {}
 
     // Count number of unique nodes.
-    edges.forEach(([u, v]) => {
+    for (let i = 0; i < edges.length; i++) {
+      const [u, v] = edges[i]
       if (!(u in idMap)) idMap[u] = index++
       if (!(v in idMap)) idMap[v] = index++
-    })
+    }
 
     // Instantiate mat to all false.
     this.mat = [...Array(index)].map(() => [...Array(index)].map(() => false))
 
     // Add each edge.
-    edges.forEach(([u, v]) => {
+    for (let i = 0; i < edges.length; i++) {
+      const [u, v] = edges[i]
       this.mat[idMap[u]][idMap[v]] = true
       this.mat[idMap[v]][idMap[u]] = true
-    })
+    }
   }
 
   public hasEdge = (u: number, v: number) => this.mat[u][v]
@@ -81,9 +83,9 @@ export class Graph {
 
   public children = (u: number): number[] => {
     const children: number[] = []
-    this.mat[u].forEach((elt, i) => {
-      if (elt) children.push(i)
-    })
+    for (let i = 0; i < this.mat[u].length; i++) {
+      if (this.mat[u][i]) children.push(i)
+    }
     return children
   }
   public size = () => this.mat.length
