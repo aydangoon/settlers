@@ -415,6 +415,8 @@ export class Game {
       this.do_decideOnTradeOffer(action)
     } else if (type === ActionType.DrawDevCard) {
       this.do_drawDevCard(action)
+    } else if (type === ActionType.Exchange) {
+      this.do_exchange(action)
     } else {
       this.do_endTurn()
     }
@@ -438,11 +440,9 @@ export class Game {
     ) {
       return false
     }
-
     // Is the requested action an acceptable transition given
     // the current `turnState`?
     if (!isValidTransition(this.turnState, action)) return false
-
     // So if the action is correct given the `player` and it is correct given
     // the state of the turn, is it valid given the rest of the game's state?
     const { type, payload, player } = action
@@ -475,7 +475,8 @@ export class Game {
         node > -1 &&
         node < NUM_TILES &&
         this.board.nodes[node].isEmpty() &&
-        this.players[this.turn].resources.has(ResourceBundle.settlementCost)
+        (this.phase !== GamePhase.Playing ||
+          this.players[this.turn].resources.has(ResourceBundle.settlementCost))
       )
     } else if (type === ActionType.BuildCity) {
       const node: number = (<BuildCityPayload>payload).node
@@ -495,6 +496,8 @@ export class Game {
       return (
         adj0.includes(node1) && // nodes adjacent and
         this.board.roadnetwork.getRoad(node0, node1) === -1 && // no road there yet and
+        (this.phase !== GamePhase.Playing ||
+          this.players[this.turn].resources.has(ResourceBundle.roadCost)) && // can buy a road or its setup
         (this.board.nodes[node0].getPlayer() === this.turn || // settlement on node 0 or
           this.board.nodes[node1].getPlayer() === this.turn || // settlement on node 1 or
           adj0.find((onid0) => this.board.roadnetwork.getRoad(onid0, node0) === this.turn) !==
@@ -536,7 +539,6 @@ export class Game {
   public handleAction(action: Action): null | Action {
     // Determine if the action can be done given current game state.
     if (!this.isValidAction(action)) return null
-
     // The two edge cases where we need to update our action's payload due
     // to randomness
     if (action.type === ActionType.Roll) {
