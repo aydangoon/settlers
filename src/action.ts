@@ -36,11 +36,17 @@ export enum ActionType {
   DecideOnTradeOffer,
 
   DrawDevCard,
+  Exchange,
 
   EndTurn,
 }
 
 export interface ActionPayload {}
+
+export interface ExchangePayload extends ActionPayload {
+  offer: Resource
+  request: Resource
+}
 
 export interface MakeTradeOfferPayload extends ActionPayload {
   /** What is the actual offer lol */

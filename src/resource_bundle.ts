@@ -58,6 +58,15 @@ export class ResourceBundle implements Loggable {
   }
 
   /**
+   * Set the amount of a resource to resource.
+   * @param resource The resource to set the amount of.
+   * @param amnt The amount.
+   */
+  public set(resource: Resource, amnt: number) {
+    this.bundle[resource] = amnt
+  }
+
+  /**
    *
    * @param bundle The bundle we wish to add to this bundle. It is unchanged.
    */

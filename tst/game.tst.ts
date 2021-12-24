@@ -5,7 +5,6 @@ import { TurnState } from '../src/turn_fsm'
 
 describe('handle roll action', () => {
   const game: any = new Game()
-  let turn: number = 0
 
   // configure game
   game.turnState = TurnState.Preroll

@@ -16,6 +16,8 @@ import {
   ROBBER_LIMIT,
   NUM_TILES,
   NUM_NODES,
+  MIN_LONGEST_ROAD,
+  MIN_LARGEST_ARMY,
 } from './constants'
 import Player from './player'
 import ResourceBundle from './resource_bundle'
@@ -26,6 +28,7 @@ import Action, {
   BuildSettlementPayload,
   DiscardPayload,
   DrawDevCardPayload,
+  ExchangePayload,
   MakeTradeOfferPayload,
   MoveRobberPayload,
   RobPayload,
@@ -75,6 +78,10 @@ export class Game {
   private mustDiscard: boolean[]
   /** Boolean indicating if we have rolled on the current turn yet. */
   private hasRolled: boolean
+  /** [owner, amount] of largest army. */
+  private largestArmy: { owner: number; size: number }
+  /** [owner, length] of longest road */
+  private longestRoad: { owner: number; length: number }
 
   constructor() {
     this.bank = new ResourceBundle(NUM_EACH_RESOURCE)
@@ -96,12 +103,9 @@ export class Game {
 
     this.turnState = TurnState.SetupSettlement
     this.mustDiscard = [...Array(NUM_PLAYERS)].map(() => false)
+    this.largestArmy = { owner: -1, size: MIN_LARGEST_ARMY - 1 }
+    this.longestRoad = { owner: -1, length: MIN_LONGEST_ROAD - 1 }
   }
-
-  // ============================ can_ helper methods ==========================
-
-  // can_ prefixed functions are helpers to check if an action is allowed given
-  // game's state. These **dont** change game state.
 
   // ============================ do_ helper methods ============================
 
@@ -180,6 +184,16 @@ export class Game {
       }
       this.turnState = TurnState.SetupRoad
     }
+    // Post processing.
+    const port = this.board.nodes[node].getPort()
+    if (port !== null) {
+      const prevRates = this.players[this.turn].rates
+      for (let i = 0; i < port.resources.length; i++) {
+        const res = port.resources[i] as Resource
+        prevRates.set(res, Math.min(prevRates.get(res), port.rate))
+      }
+    }
+    this.players[this.turn].victoryPoints++
   }
 
   private do_buildRoad(action: Action) {
@@ -217,12 +231,20 @@ export class Game {
     const { node } = action.payload as BuildCityPayload
     this.board.nodes[node].buildCity()
     this.players[this.turn].resources.subtract(ResourceBundle.cityCost)
+    this.players[this.turn].victoryPoints++
   }
 
   // Play dev cards.
 
   private do_playRobber() {
     this.players[this.turn].devCards.remove(DevCard.Knight)
+    this.players[this.turn].knightsPlayed++
+    const { owner, size } = this.largestArmy
+    if (owner !== this.turn && this.players[this.turn].knightsPlayed > size) {
+      if (owner !== -1) this.players[owner].victoryPoints -= 2
+      this.players[this.turn].victoryPoints += 2
+      this.largestArmy = { owner: this.turn, size: this.players[this.turn].knightsPlayed }
+    }
     this.turnState = TurnState.MovingRobber
   }
 
@@ -292,6 +314,15 @@ export class Game {
     const { card } = action.payload as DrawDevCardPayload
     this.players[this.turn].devCards.add(card)
     this.deck.remove(card)
+    if (card === DevCard.VictoryPoint) this.players[this.turn].victoryPoints++
+  }
+
+  private do_exchange(action: Action) {
+    const { offer, request } = action.payload as ExchangePayload
+    const rate = this.players[this.turn].rates.get(offer)
+    this.bank.add(offer, rate)
+    this.bank.subtract(request, 1)
+    this.players[this.turn].resources.add(request, 1)
   }
 
   // Trades
@@ -300,7 +331,7 @@ export class Game {
     const { offer, request } = action.payload as MakeTradeOfferPayload
     const id =
       this.tradeOffers.length > 0 ? this.tradeOffers[this.tradeOffers.length - 1].id + 1 : 0
-    const tradeOffer = new TradeOffer(id, action.player, offer, request)
+    this.tradeOffers.push(new TradeOffer(id, action.player, offer, request))
   }
 
   private do_decideOnTradeOffer(action: Action) {
@@ -479,14 +510,18 @@ export class Game {
     } else if (type === ActionType.DrawDevCard) {
       const { card } = payload as DrawDevCardPayload
       return !this.deck.isEmpty() && (card === undefined || this.deck.has(card))
+    } else if (type === ActionType.Exchange) {
+      const { offer, request } = payload as ExchangePayload
+      const rate = this.players[this.turn].rates.get(offer)
+      return this.players[this.turn].resources.get(offer) >= rate && this.bank.get(request) > 1
     }
     return true
   }
 
   /**
-   * Check if an action is valid, make action deterministic (edge cases), then do the action.
+   * (1) Check if an action is valid, (2) make action deterministic (edge cases),
+   * then (3) do the action.
    * @param action The action to be handled.
-   * @param requester Player number who requested the action.
    * @returns `null` if `action` is invalid, the completed, valid action otherwise.
    */
   public handleAction(action: Action): null | Action {
@@ -497,14 +532,10 @@ export class Game {
     // to randomness
     if (action.type === ActionType.Roll) {
       const payload = <RollPayload>action.payload
-      if (payload.value === undefined) {
-        payload.value = rollDie() + rollDie()
-      }
+      if (payload.value === undefined) payload.value = rollDie() + rollDie()
     } else if (action.type === ActionType.DrawDevCard) {
       const payload = <DrawDevCardPayload>action.payload
-      if (payload.card === undefined) {
-        payload.card = this.deck.pickOneAtRandom()
-      }
+      if (payload.card === undefined) payload.card = this.deck.pickOneAtRandom()
     }
 
     // Safely update internal state based on the validated action.
