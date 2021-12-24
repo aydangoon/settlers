@@ -14,6 +14,8 @@ import {
   NUM_YEAR_OF_PLENTY,
   NUM_RESOURCE_TYPES,
   ROBBER_LIMIT,
+  NUM_TILES,
+  NUM_NODES,
 } from './constants'
 import Player from './player'
 import ResourceBundle from './resource_bundle'
@@ -151,11 +153,11 @@ export class Game {
       // Robber case.
       this.mustDiscard = this.players.map(({ resources }) => resources.size() > ROBBER_LIMIT)
 
-      const overLimit = this.mustDiscard.reduce((acc, curr) => acc || curr, false)
-
       // If someone is over the limit, we move to discarding state before moving robber.
       // Otherwise we just move to moving robber state.
-      this.turnState = overLimit ? TurnState.Discarding : TurnState.MovingRobber
+      this.turnState = this.mustDiscard.includes(true)
+        ? TurnState.Discarding
+        : TurnState.MovingRobber
     }
     this.hasRolled = true
   }
@@ -281,11 +283,9 @@ export class Game {
     this.players[action.player].resources.subtract(bundle)
     this.mustDiscard[action.player] = false
 
-    const overLimit = this.mustDiscard.reduce((acc, curr) => acc || curr, false)
-
     // If someone is over the limit, we move to discarding state before moving robber.
     // Otherwise we just move to moving robber state.
-    this.turnState = overLimit ? TurnState.Discarding : TurnState.MovingRobber
+    this.turnState = this.mustDiscard.includes(true) ? TurnState.Discarding : TurnState.MovingRobber
   }
 
   private do_drawDevCard(action: Action) {
@@ -304,7 +304,7 @@ export class Game {
   }
 
   private do_decideOnTradeOffer(action: Action) {
-    const { status, player, id } = action.payload as TradeOfferDecisionPayload
+    const { status, withPlayer, id } = action.payload as TradeOfferDecisionPayload
     const index = this.tradeOffers.findIndex((to) => to.id === id)
     const tradeOffer: TradeOffer = this.tradeOffers[index]
 
@@ -312,11 +312,11 @@ export class Game {
       if (status === TradeStatus.Decline) {
         // Case 0: Closing a trade offer we own.
         this.tradeOffers.splice(index, 1)
-      } else if (player !== undefined) {
+      } else if (withPlayer !== undefined) {
         // Case 1: Trading with a player who accepted our offer.
         ResourceBundle.trade(
           tradeOffer.request,
-          this.players[player].resources,
+          this.players[withPlayer].resources,
           tradeOffer.offer,
           this.players[action.player].resources
         )
@@ -403,11 +403,84 @@ export class Game {
     // the current `turnState`?
     if (!isValidTransition(this.turnState, action)) return false
 
-    // TODO: is the action acceptable given the rest of the game's state?
-    switch (action.type) {
-      default:
-        return true
+    // So if the action is correct given the `player` and it is correct given
+    // the state of the turn, is it valid given the rest of the game's state?
+    const { type, payload, player } = action
+    if (type === ActionType.Roll) {
+      const { value } = payload as RollPayload
+      return value === undefined || (value > 0 && value < 13)
+    } else if (type === ActionType.PlayRobber) {
+      return this.players[this.turn].devCards.has(DevCard.Knight)
+    } else if (type === ActionType.MoveRobber) {
+      const { to } = payload as MoveRobberPayload
+      return to > -1 && to < NUM_TILES && to !== this.board.robber
+    } else if (type === ActionType.Rob) {
+      const { victim } = payload as RobPayload
+      const selectable = this.board.tiles[this.board.robber].nodes.map((nid) =>
+        this.board.nodes[nid].getPlayer()
+      )
+      return victim !== -1 && victim !== player && selectable.includes(victim)
+    } else if (type === ActionType.PlayMonopoly) {
+      return this.players[this.turn].devCards.has(DevCard.Monopoly)
+    } else if (type === ActionType.PlayYearOfPlenty) {
+      return this.players[this.turn].devCards.has(DevCard.YearOfPlenty)
+    } else if (type === ActionType.SelectYearOfPlentyResources) {
+      const [res1, res2] = (<SelectYearOfPlentyResourcesPayload>payload).resources
+      return this.bank.get(res1) > 1 && this.bank.get(res2) > 1
+    } else if (type === ActionType.PlayRoadBuilder) {
+      return this.players[this.turn].devCards.has(DevCard.RoadBuilder)
+    } else if (type === ActionType.BuildSettlement) {
+      const node: number = (<BuildSettlementPayload>payload).node
+      return (
+        node > -1 &&
+        node < NUM_TILES &&
+        this.board.nodes[node].isEmpty() &&
+        this.players[this.turn].resources.has(ResourceBundle.settlementCost)
+      )
+    } else if (type === ActionType.BuildCity) {
+      const node: number = (<BuildCityPayload>payload).node
+      return (
+        node > -1 &&
+        node < NUM_TILES &&
+        this.board.nodes[node].getPlayer() === this.turn &&
+        !this.board.nodes[node].hasCity() &&
+        this.players[this.turn].resources.has(ResourceBundle.cityCost)
+      )
+    } else if (type === ActionType.BuildRoad) {
+      const { node0, node1 } = <BuildRoadPayload>payload
+      const nodesValid = node0 > -1 && node1 > -1 && node0 < NUM_NODES && node1 < NUM_NODES
+      if (!nodesValid) return false
+      const adj0 = this.board.roadnetwork.adjacentTo(node0)
+      const adj1 = this.board.roadnetwork.adjacentTo(node1)
+      return (
+        adj0.includes(node1) && // nodes adjacent and
+        this.board.roadnetwork.getRoad(node0, node1) === -1 && // no road there yet and
+        (this.board.nodes[node0].getPlayer() === this.turn || // settlement on node 0 or
+          this.board.nodes[node1].getPlayer() === this.turn || // settlement on node 1 or
+          adj0.find((onid0) => this.board.roadnetwork.getRoad(onid0, node0) === this.turn) !==
+            undefined || // road we own incident on node 0 or
+          adj1.find((onid1) => this.board.roadnetwork.getRoad(onid1, node1) !== this.turn) !==
+            undefined) // road we own incident on node 1
+      )
+    } else if (type === ActionType.Discard) {
+      const { bundle } = payload as DiscardPayload
+      return (
+        this.mustDiscard[player] &&
+        this.players[player].resources.has(bundle) &&
+        bundle.size() === Math.floor(this.players[player].resources.size() / 2)
+      )
+    } else if (type === ActionType.MakeTradeOffer) {
+      const { offer } = payload as MakeTradeOfferPayload
+      return this.players[player].resources.has(offer)
+    } else if (type === ActionType.DecideOnTradeOffer) {
+      const { status, id, withPlayer } = payload as TradeOfferDecisionPayload
+      const tradeOffer = this.tradeOffers.find((offer) => offer.id === id)
+      return tradeOffer !== undefined // TODO: this logic is incomplete.
+    } else if (type === ActionType.DrawDevCard) {
+      const { card } = payload as DrawDevCardPayload
+      return !this.deck.isEmpty() && (card === undefined || this.deck.has(card))
     }
+    return true
   }
 
   /**

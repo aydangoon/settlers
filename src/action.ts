@@ -54,7 +54,7 @@ export interface TradeOfferDecisionPayload extends ActionPayload {
   /** The id of the trade. */
   id: number
   /** The player we are agreeing to do the trade with. Only needed by host. */
-  player?: number
+  withPlayer?: number
 }
 
 export interface DiscardPayload extends ActionPayload {
