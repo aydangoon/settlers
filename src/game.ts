@@ -205,6 +205,15 @@ export class Game {
       } else {
         this.freeRoads--
       }
+      const { owner, length } = this.longestRoad
+      if (owner !== this.turn) {
+        const myLength = this.board.getLongestRoad(this.turn)
+        if (myLength > length) {
+          if (owner !== -1) this.players[owner].victoryPoints -= 2
+          this.longestRoad = { owner: this.turn, length: myLength }
+          this.players[this.turn].victoryPoints += 2
+        }
+      }
     } else {
       // Setup case. just build the road where requested.
       this.board.roadnetwork.buildRoad(node0, node1, this.turn)
