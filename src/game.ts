@@ -501,7 +501,7 @@ export class Game {
         (this.board.nodes[node0].getPlayer() === this.turn || // settlement on node 0 or
           this.board.nodes[node1].getPlayer() === this.turn || // settlement on node 1 or
           adj0.find((onid0) => this.board.getRoad(onid0, node0) === this.turn) !== undefined || // road we own incident on node 0 or
-          adj1.find((onid1) => this.board.getRoad(onid1, node1) !== this.turn) !== undefined) // road we own incident on node 1
+          adj1.find((onid1) => this.board.getRoad(onid1, node1) === this.turn) !== undefined) // road we own incident on node 1
       )
     } else if (type === ActionType.Discard) {
       const { bundle } = payload as DiscardPayload

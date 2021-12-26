@@ -1,7 +1,7 @@
 import { notStrictEqual, strict, strictEqual } from 'assert'
 import chai from 'chai'
 import Graph from '../src/board/graph'
-import { BFSTraveral, breadthFirstSearch, connectedComponents, maxTrail } from '../src/utils'
+import { breadthFirstSearch, connectedComponents, maxTrail } from '../src/utils'
 
 describe('graph basic tests', () => {
   it('works :)', () => {

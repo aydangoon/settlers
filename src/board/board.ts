@@ -214,7 +214,7 @@ export class Board implements Loggable {
     }
 
     const ccs: Graph<string>[] = connectedComponents(new Graph<string>(edges))
-    return Math.max(...ccs.map((cc) => this.longestRoadOn(cc)))
+    return Math.max(0, ...ccs.map((cc) => this.longestRoadOn(cc)))
   }
 
   public playersOnRobber(): number[] {

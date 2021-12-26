@@ -139,6 +139,19 @@ describe('board longestRoad multiple cc', () => {
     strictEqual(b.getLongestRoad(0), 6)
   })
 })
+
+describe('road interrupted by a settlement', () => {
+  it('splits the road', () => {
+    const b = new Board()
+    b.buildRoad(0, 1, 0)
+    b.buildRoad(1, 2, 0)
+    strictEqual(b.getLongestRoad(0), 2)
+    b.nodes[1].buildSettlement(1)
+    strictEqual(b.getLongestRoad(0), 1)
+    strictEqual(b.getLongestRoad(1), 0)
+  })
+})
+
 // describe('board log', () => {
 //   it('looks nice?', () => {
 //     const b = new Board()
