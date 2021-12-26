@@ -6,20 +6,20 @@
 import { Action, ActionType } from './action'
 
 export enum TurnState {
-  SetupSettlement,
-  SetupRoad,
+  SetupSettlement = 'Setup Settlement',
+  SetupRoad = 'Setup Road',
 
-  Preroll,
-  Postroll,
+  Preroll = 'Pre-roll',
+  Postroll = 'Post-roll',
 
-  MovingRobber,
-  Robbing,
+  MovingRobber = 'Moving Robber',
+  Robbing = 'Robbing',
 
-  SelectingMonopolyResource,
+  SelectingMonopolyResource = 'Selecting Monopoly Resource',
 
-  SelectingYearOfPlentyResources,
+  SelectingYearOfPlentyResources = 'Selecting Year of Plenty Resource',
 
-  Discarding,
+  Discarding = 'Discarding',
 }
 
 /**

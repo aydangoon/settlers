@@ -6,7 +6,7 @@
 import DevCard from './dev_card/dev_card'
 import Resource from './resource/resource'
 import ResourceBundle from './resource/resource_bundle'
-import TradeOffer, { TradeStatus } from './trade_offer'
+import { TradeStatus } from './trade_offer'
 
 /**
  * All possible types of actions.

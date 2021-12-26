@@ -45,18 +45,19 @@ import Board from './board/board'
 import Resource from './resource/resource'
 import DevCard from './dev_card/dev_card'
 import TradeOffer, { TradeStatus } from './trade_offer'
+import Loggable from './loggable'
 
 /**
  * Enum of game phases.
  */
 export enum GamePhase {
-  SetupForward,
-  SetupBackward,
-  Playing,
-  Finished,
+  SetupForward = 'Forward Setup',
+  SetupBackward = 'Backward Setup',
+  Playing = 'Playing',
+  Finished = 'Finished',
 }
 
-export class Game {
+export class Game implements Loggable {
   /** A resource bundle for the bank. */
   private bank: ResourceBundle
   /** The dev card deck. */
@@ -592,6 +593,29 @@ export class Game {
 
     // return the completed, valid action.
     return action
+  }
+
+  toLog = () => {
+    let o =
+      '========================================================================================\n'
+    o += 'phase: ' + this.phase + ' turnState: ' + this.turnState + '\n'
+    o += 'Players: \n'
+    for (let i = 0; i < NUM_PLAYERS; i++) o += this.players[i].toLog() + '\n'
+    o += 'Bank: ' + this.bank.toLog() + '\n'
+    o += 'Turn: ' + this.turn + '\n'
+    o += 'Deck: ' + this.deck.toLog() + '\n'
+    o += 'Largest Army: ' + JSON.stringify(this.largestArmy) + '\n'
+    o += 'Longest Road: ' + JSON.stringify(this.longestRoad) + '\n'
+    o +=
+      'Free Roads: ' +
+      this.freeRoads +
+      ' hasRolled: ' +
+      this.hasRolled +
+      ' winner: ' +
+      this.winner +
+      '\n'
+    if (this.mustDiscard.includes(true)) o += 'mustDiscard: ' + this.mustDiscard.toString() + '\n'
+    return o
   }
 }
 
