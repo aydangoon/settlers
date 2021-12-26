@@ -1,7 +1,7 @@
 import Resource, { resStr } from './resource'
-import { NUM_RESOURCE_TYPES } from './constants'
-import { weightedRandom } from './utils'
-import Loggable from './loggable'
+import { NUM_RESOURCE_TYPES } from '../constants'
+import { weightedRandom } from '../utils'
+import Loggable from '../loggable'
 
 /**
  * A collection of resources.

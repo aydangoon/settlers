@@ -1,7 +1,7 @@
 import assert from 'assert'
-import DevCard from '../src/dev_card'
-import Player from '../src/player'
-import Resource from '../src/resource'
+import DevCard from '../src/game/dev_card/dev_card'
+import Player from '../src/game/player'
+import Resource from '../src/game/resource/resource'
 
 // describe('player string', () => {
 //   it('works', () => {

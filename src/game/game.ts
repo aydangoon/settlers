@@ -21,7 +21,7 @@ import {
   VPS_TO_WIN,
 } from './constants'
 import Player from './player'
-import ResourceBundle from './resource_bundle'
+import ResourceBundle from './resource/resource_bundle'
 import Action, {
   ActionType,
   BuildCityPayload,
@@ -40,10 +40,10 @@ import Action, {
 } from './action'
 import isValidTransition, { TurnState } from './turn_fsm'
 import { rollDie } from './utils'
-import DevCardBundle from './dev_card_bundle'
+import DevCardBundle from './dev_card/dev_card_bundle'
 import Board from './board/board'
-import Resource from './resource'
-import DevCard from './dev_card'
+import Resource from './resource/resource'
+import DevCard from './dev_card/dev_card'
 import TradeOffer, { TradeStatus } from './trade_offer'
 
 /**
@@ -127,6 +127,8 @@ export class Game {
     }
   }
 
+  private currPlayer = () => this.players[this.turn]
+
   // ============================ do_ helper methods ============================
 
   // do_ prefixed functions are helpers to actually do their respective actions.
@@ -192,7 +194,7 @@ export class Game {
     const { node } = action.payload as BuildSettlementPayload
     if (this.phase === GamePhase.Playing) {
       this.board.nodes[node].buildSettlement(this.turn)
-      this.players[this.turn].resources.subtract(ResourceBundle.settlementCost)
+      this.currPlayer().resources.subtract(ResourceBundle.settlementCost)
 
       // If you don't own the longest road, we need to check if your built settlement
       // disrupted who has the longest road.
@@ -211,20 +213,20 @@ export class Game {
       if (this.phase === GamePhase.SetupBackward) {
         this.board.tiles
           .filter(({ nodes }) => nodes.includes(node))
-          .forEach(({ resource }) => this.players[this.turn].resources.add(resource, 1))
+          .forEach(({ resource }) => this.currPlayer().resources.add(resource, 1))
       }
       this.turnState = TurnState.SetupRoad
     }
     // Post processing.
     const port = this.board.nodes[node].getPort()
     if (port !== null) {
-      const prevRates = this.players[this.turn].rates
+      const prevRates = this.currPlayer().rates
       for (let i = 0; i < port.resources.length; i++) {
         const res = port.resources[i] as Resource
         prevRates.set(res, Math.min(prevRates.get(res), port.rate))
       }
     }
-    this.players[this.turn].victoryPoints++
+    this.currPlayer().victoryPoints++
   }
 
   private do_buildRoad(action: Action) {
@@ -232,7 +234,7 @@ export class Game {
     if (this.phase === GamePhase.Playing) {
       this.board.buildRoad(node0, node1, this.turn)
       if (this.freeRoads === 0) {
-        this.players[this.turn].resources.subtract(ResourceBundle.roadCost)
+        this.currPlayer().resources.subtract(ResourceBundle.roadCost)
       } else {
         this.freeRoads--
       }
@@ -272,21 +274,21 @@ export class Game {
   private do_buildCity(action: Action) {
     const { node } = action.payload as BuildCityPayload
     this.board.nodes[node].buildCity()
-    this.players[this.turn].resources.subtract(ResourceBundle.cityCost)
-    this.players[this.turn].victoryPoints++
+    this.currPlayer().resources.subtract(ResourceBundle.cityCost)
+    this.currPlayer().victoryPoints++
     this.checkWinner()
   }
 
   // Play dev cards.
 
   private do_playRobber() {
-    this.players[this.turn].devCards.remove(DevCard.Knight)
-    this.players[this.turn].knightsPlayed++
+    this.currPlayer().devCards.remove(DevCard.Knight)
+    this.currPlayer().knightsPlayed++
     const { owner, size } = this.largestArmy
-    if (owner !== this.turn && this.players[this.turn].knightsPlayed > size) {
+    if (owner !== this.turn && this.currPlayer().knightsPlayed > size) {
       if (owner !== -1) this.players[owner].victoryPoints -= 2
-      this.players[this.turn].victoryPoints += 2
-      this.largestArmy = { owner: this.turn, size: this.players[this.turn].knightsPlayed }
+      this.currPlayer().victoryPoints += 2
+      this.largestArmy = { owner: this.turn, size: this.currPlayer().knightsPlayed }
       this.checkWinner()
     }
     this.turnState = TurnState.MovingRobber
@@ -305,12 +307,12 @@ export class Game {
   private do_Rob(action: Action) {
     const { victim } = action.payload as RobPayload
     const res: Resource = this.players[victim].resources.removeOneAtRandom()
-    this.players[this.turn].resources.add(res, 1)
+    this.currPlayer().resources.add(res, 1)
     this.turnState = this.hasRolled ? TurnState.Postroll : TurnState.Preroll
   }
 
   private do_playMonopoly() {
-    this.players[this.turn].devCards.remove(DevCard.Monopoly)
+    this.currPlayer().devCards.remove(DevCard.Monopoly)
     this.turnState = TurnState.SelectingMonopolyResource
   }
 
@@ -319,27 +321,27 @@ export class Game {
     for (let i = 0; i < NUM_PLAYERS; i++) {
       if (i === this.turn) continue
       const amnt = this.players[i].resources.removeAll(resource)
-      this.players[this.turn].resources.add(resource, amnt)
+      this.currPlayer().resources.add(resource, amnt)
     }
     this.turnState = this.hasRolled ? TurnState.Postroll : TurnState.Preroll
   }
 
   private do_playYearOfPlenty() {
-    this.players[this.turn].devCards.remove(DevCard.YearOfPlenty)
+    this.currPlayer().devCards.remove(DevCard.YearOfPlenty)
     this.turnState = TurnState.SelectingYearOfPlentyResources
   }
 
   private do_selectYearOfPlentyResources(action: Action) {
     const { resources } = action.payload as SelectYearOfPlentyResourcesPayload
     for (let i = 0; i < 2; i++) {
-      this.players[this.turn].resources.add(i as Resource, 1)
+      this.currPlayer().resources.add(i as Resource, 1)
       this.bank.subtract(i as Resource, 1)
     }
     this.turnState = this.hasRolled ? TurnState.Postroll : TurnState.Preroll
   }
 
   private do_playRoadBuilder() {
-    this.players[this.turn].devCards.remove(DevCard.RoadBuilder)
+    this.currPlayer().devCards.remove(DevCard.RoadBuilder)
     this.freeRoads = 2
     this.turnState = this.hasRolled ? TurnState.Preroll : TurnState.Postroll
   }
@@ -356,20 +358,20 @@ export class Game {
 
   private do_drawDevCard(action: Action) {
     const { card } = action.payload as DrawDevCardPayload
-    this.players[this.turn].devCards.add(card)
+    this.currPlayer().devCards.add(card)
     this.deck.remove(card)
     if (card === DevCard.VictoryPoint) {
-      this.players[this.turn].victoryPoints++
+      this.currPlayer().victoryPoints++
       this.checkWinner()
     }
   }
 
   private do_exchange(action: Action) {
     const { offer, request } = action.payload as ExchangePayload
-    const rate = this.players[this.turn].rates.get(offer)
+    const rate = this.currPlayer().rates.get(offer)
     this.bank.add(offer, rate)
     this.bank.subtract(request, 1)
-    this.players[this.turn].resources.add(request, 1)
+    this.currPlayer().resources.add(request, 1)
   }
 
   // Trades
@@ -488,7 +490,7 @@ export class Game {
       const { value } = payload as RollPayload
       return value === undefined || (value > 0 && value < 13)
     } else if (type === ActionType.PlayRobber) {
-      return this.players[this.turn].devCards.has(DevCard.Knight)
+      return this.currPlayer().devCards.has(DevCard.Knight)
     } else if (type === ActionType.MoveRobber) {
       const { to } = payload as MoveRobberPayload
       return to > -1 && to < NUM_TILES && to !== this.board.robber
@@ -499,14 +501,14 @@ export class Game {
       )
       return victim !== -1 && victim !== player && selectable.includes(victim)
     } else if (type === ActionType.PlayMonopoly) {
-      return this.players[this.turn].devCards.has(DevCard.Monopoly)
+      return this.currPlayer().devCards.has(DevCard.Monopoly)
     } else if (type === ActionType.PlayYearOfPlenty) {
-      return this.players[this.turn].devCards.has(DevCard.YearOfPlenty)
+      return this.currPlayer().devCards.has(DevCard.YearOfPlenty)
     } else if (type === ActionType.SelectYearOfPlentyResources) {
       const [res1, res2] = (<SelectYearOfPlentyResourcesPayload>payload).resources
       return this.bank.get(res1) > 1 && this.bank.get(res2) > 1
     } else if (type === ActionType.PlayRoadBuilder) {
-      return this.players[this.turn].devCards.has(DevCard.RoadBuilder)
+      return this.currPlayer().devCards.has(DevCard.RoadBuilder)
     } else if (type === ActionType.BuildSettlement) {
       const node: number = (<BuildSettlementPayload>payload).node
       return (
@@ -514,7 +516,7 @@ export class Game {
         node < NUM_TILES &&
         this.board.nodes[node].isEmpty() &&
         (this.phase !== GamePhase.Playing ||
-          this.players[this.turn].resources.has(ResourceBundle.settlementCost))
+          this.currPlayer().resources.has(ResourceBundle.settlementCost))
       )
     } else if (type === ActionType.BuildCity) {
       const node: number = (<BuildCityPayload>payload).node
@@ -523,7 +525,7 @@ export class Game {
         node < NUM_TILES &&
         this.board.nodes[node].getPlayer() === this.turn &&
         !this.board.nodes[node].hasCity() &&
-        this.players[this.turn].resources.has(ResourceBundle.cityCost)
+        this.currPlayer().resources.has(ResourceBundle.cityCost)
       )
     } else if (type === ActionType.BuildRoad) {
       const { node0, node1 } = <BuildRoadPayload>payload
@@ -535,7 +537,7 @@ export class Game {
         adj0.includes(node1) && // nodes adjacent and
         this.board.getRoad(node0, node1) === -1 && // no road there yet and
         (this.phase !== GamePhase.Playing ||
-          this.players[this.turn].resources.has(ResourceBundle.roadCost)) && // can buy a road or its setup
+          this.currPlayer().resources.has(ResourceBundle.roadCost)) && // can buy a road or its setup
         (this.board.nodes[node0].getPlayer() === this.turn || // settlement on node 0 or
           this.board.nodes[node1].getPlayer() === this.turn || // settlement on node 1 or
           adj0.find((onid0) => this.board.getRoad(onid0, node0) === this.turn) !== undefined || // road we own incident on node 0 or
@@ -560,8 +562,8 @@ export class Game {
       return !this.deck.isEmpty() && (card === undefined || this.deck.has(card))
     } else if (type === ActionType.Exchange) {
       const { offer, request } = payload as ExchangePayload
-      const rate = this.players[this.turn].rates.get(offer)
-      return this.players[this.turn].resources.get(offer) >= rate && this.bank.get(request) > 1
+      const rate = this.currPlayer().rates.get(offer)
+      return this.currPlayer().resources.get(offer) >= rate && this.bank.get(request) > 1
     }
     return true
   }

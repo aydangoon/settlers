@@ -14,9 +14,9 @@ export const devCardStr = (c: DevCard) => {
     case DevCard.Knight:
       return 'knight'
     case DevCard.VictoryPoint:
-      return 'vp'
+      return 'victory point'
     case DevCard.YearOfPlenty:
-      return 'YoP'
+      return 'year of plenty'
     case DevCard.Monopoly:
       return 'monopoly'
     default:

@@ -1,5 +1,5 @@
 import assert, { strict, strictEqual } from 'assert'
-import { ActionType, Action } from '../src/action'
+import { ActionType, Action } from '../src/game/action'
 
 describe('roll action', () => {
   it('should create a roll action', () => {

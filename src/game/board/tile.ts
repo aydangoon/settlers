@@ -1,5 +1,5 @@
 import Loggable from '../loggable'
-import Resource, { resStr } from '../resource'
+import Resource, { resStr } from '../resource/resource'
 
 /**
  * A tile on the board.

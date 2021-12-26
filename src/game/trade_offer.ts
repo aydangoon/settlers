@@ -1,5 +1,5 @@
 import { NUM_PLAYERS } from './constants'
-import ResourceBundle from './resource_bundle'
+import ResourceBundle from './resource/resource_bundle'
 
 export enum TradeStatus {
   Pending,

@@ -1,7 +1,7 @@
 import { notStrictEqual, strict, strictEqual } from 'assert'
 import chai from 'chai'
-import Graph from '../src/board/graph'
-import { breadthFirstSearch, connectedComponents, maxTrail } from '../src/utils'
+import Graph from '../src/game/board/graph'
+import { breadthFirstSearch, connectedComponents, maxTrail } from '../src/game/utils'
 
 describe('graph basic tests', () => {
   it('works :)', () => {

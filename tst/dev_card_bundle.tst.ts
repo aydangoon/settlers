@@ -1,6 +1,6 @@
 import assert from 'assert'
-import DevCard from '../src/dev_card'
-import DevCardBundle from '../src/dev_card_bundle'
+import DevCard from '../src/game/dev_card/dev_card'
+import DevCardBundle from '../src/game/dev_card/dev_card_bundle'
 
 describe('new ResourceBundle()', () => {
   it('should create an empty bundle', () => {

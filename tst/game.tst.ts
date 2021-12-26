@@ -1,7 +1,7 @@
 import assert, { strictEqual, notStrictEqual } from 'assert'
-import Action, { ActionType, RollPayload } from '../src/action'
-import Game, { GamePhase } from '../src/game'
-import { TurnState } from '../src/turn_fsm'
+import Action, { ActionType, RollPayload } from '../src/game/action'
+import Game, { GamePhase } from '../src/game/game'
+import { TurnState } from '../src/game/turn_fsm'
 
 describe('handle roll action', () => {
   const game: any = new Game()

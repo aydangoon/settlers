@@ -3,9 +3,9 @@
  * @module
  */
 
-import DevCard from './dev_card'
-import Resource from './resource'
-import ResourceBundle from './resource_bundle'
+import DevCard from './dev_card/dev_card'
+import Resource from './resource/resource'
+import ResourceBundle from './resource/resource_bundle'
 import TradeOffer, { TradeStatus } from './trade_offer'
 
 /**
@@ -139,8 +139,11 @@ export class Action {
     this.payload = payload
   }
 
-  public toJSON() {
-    return JSON.stringify(this)
+  public serialized = (): string => JSON.stringify(this)
+
+  public static deserialize = (serializedObj: string): Action => {
+    const { type, payload, player } = JSON.parse(serializedObj)
+    return new Action(type, player, payload)
   }
 }
 

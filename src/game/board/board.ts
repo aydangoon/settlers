@@ -11,7 +11,7 @@ import Tile from './tile'
 import { connectedComponents, maxTrail, weightedRandom } from '../utils'
 import Graph from './graph'
 import Port from './port'
-import Resource from '../resource'
+import Resource from '../resource/resource'
 import Loggable from '../loggable'
 
 /**

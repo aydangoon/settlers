@@ -1,6 +1,6 @@
 import { strict, strictEqual } from 'assert'
-import Tile from '../../src/board/tile'
-import Resource from '../../src/resource'
+import Tile from '../../src/game/board/tile'
+import Resource from '../../src/game/resource/resource'
 
 describe('tile lifecycle & isAdjacentTo()', () => {
   it('should have valid state', () => {

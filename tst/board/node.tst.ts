@@ -1,7 +1,7 @@
 import assert, { strict, strictEqual } from 'assert'
-import Node from '../../src/board/node'
-import Port from '../../src/board/port'
-import Resource from '../../src/resource'
+import Node from '../../src/game/board/node'
+import Port from '../../src/game/board/port'
+import Resource from '../../src/game/resource/resource'
 
 describe('node lifecycle', () => {
   it('should have valid state', () => {

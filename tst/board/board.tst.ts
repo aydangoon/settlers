@@ -1,9 +1,9 @@
 import { notStrictEqual, strictEqual } from 'assert'
 import chai from 'chai'
-import Board from '../../src/board/board'
-import Tile from '../../src/board/tile'
-import { NUM_EACH_RESOURCE_TILE } from '../../src/constants'
-import Resource from '../../src/resource'
+import Board from '../../src/game/board/board'
+import Tile from '../../src/game/board/tile'
+import { NUM_EACH_RESOURCE_TILE } from '../../src/game/constants'
+import Resource from '../../src/game/resource/resource'
 
 describe('board', () => {
   it('setup is valid.', () => {

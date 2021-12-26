@@ -1,6 +1,6 @@
 import assert, { strict, strictEqual } from 'assert'
-import Resource from '../src/resource'
-import ResourceBundle from '../src/resource_bundle'
+import Resource from '../src/game/resource/resource'
+import ResourceBundle from '../src/game/resource/resource_bundle'
 
 describe('new ResourceBundle()', () => {
   it('should create an empty bundle', () => {

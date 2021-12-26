@@ -1,7 +1,7 @@
 import { BANK_RATE, NUM_CITIES, NUM_ROADS, NUM_SETTLEMENTS } from './constants'
-import DevCardBundle from './dev_card_bundle'
+import DevCardBundle from './dev_card/dev_card_bundle'
 import Loggable from './loggable'
-import ResourceBundle from './resource_bundle'
+import ResourceBundle from './resource/resource_bundle'
 
 export class Player implements Loggable {
   /** The players resources. */

@@ -1,4 +1,4 @@
-import Resource from '../resource'
+import Resource from '../resource/resource'
 
 class Port {
   /** List of resources willing to be exchanged at `rate` for one. */
