@@ -9,7 +9,11 @@ export enum Resource {
   Wool,
   None,
 }
-
+/**
+ * Get a string representation of a resource.
+ * @param res The resource.
+ * @returns A string representation of the resource.
+ */
 export const resStr = (res: Resource) => {
   switch (res) {
     case Resource.Brick:

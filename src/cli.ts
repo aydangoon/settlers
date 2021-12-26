@@ -16,8 +16,8 @@ const parseAction = (line: string): Action => {
 rl.on('line', (line: string) => {
   game.handleAction(parseAction(line))
   console.log(game.toLog())
-  console.log('enter command: ')
+  process.stdout.write('$ ')
 })
 
 console.log(game.toLog())
-console.log('enter command: ')
+process.stdout.write('$ ')

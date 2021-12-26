@@ -33,6 +33,13 @@ export const rollDie = () => uniformRandom(1, 6)
 export const uniformRandom = (lo: number, hi: number) =>
   Math.floor(Math.random() * (hi - lo + 1)) + lo
 
+/**
+ * A recursive helper function to find the max trail.
+ * @param v The current node.
+ * @param g The graph.
+ * @param seen A list of edges already visited.
+ * @returns The length of the max trail.
+ */
 export function maxTrailRec<T>(v: T, g: Graph<T>, seen: Graph<T>): number {
   const choices = g.children(v).filter((other) => !seen.hasEdge(v, other))
   if (choices.length === 0) return 0
@@ -53,14 +60,19 @@ export function maxTrailRec<T>(v: T, g: Graph<T>, seen: Graph<T>): number {
 /**
  * maxTrail explores every possible trail that starts at node `src` and
  * return the max length of all trials.
- * @param g
- * @param src
+ * @param g The graph.
+ * @param src The starting node.
  */
 export const maxTrail = <T>(g: Graph<T>, src: T): number => {
   const seen = new Graph<T>(g.nodes())
   return maxTrailRec(src, g, seen)
 }
 
+/**
+ * Get a list of graphs that are the connected components of graph `g`.
+ * @param g The graph.
+ * @returns A list of ccs.
+ */
 export const connectedComponents = <T>(g: Graph<T>): Graph<T>[] => {
   let remaining = g.nodes()
   const ccs: Graph<T>[] = []
@@ -86,6 +98,13 @@ export interface BFSTraveral<T> {
   depth: number
 }
 
+/**
+ * Run BFS on a graph from a source.
+ * @param g The graph.
+ * @param src The source elt.
+ * @returns A BFS traversal object that includes a list of visited graph elts
+ * and the max depth of the BFS tree.
+ */
 export const breadthFirstSearch = <T>(g: Graph<T>, src: T): BFSTraveral<T> => {
   const queue = [src]
   const visited = new Set<T>([src])

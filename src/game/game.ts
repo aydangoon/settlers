@@ -598,20 +598,19 @@ export class Game implements Loggable {
   toLog = () => {
     let o =
       '========================================================================================\n'
-    o += 'phase: ' + this.phase + ' turnState: ' + this.turnState + '\n'
+    o += 'phase: ' + this.phase + ' | turnState: ' + this.turnState + ' | turn: ' + this.turn + '\n'
     o += 'Players: \n'
     for (let i = 0; i < NUM_PLAYERS; i++) o += this.players[i].toLog() + '\n'
     o += 'Bank: ' + this.bank.toLog() + '\n'
-    o += 'Turn: ' + this.turn + '\n'
     o += 'Deck: ' + this.deck.toLog() + '\n'
     o += 'Largest Army: ' + JSON.stringify(this.largestArmy) + '\n'
     o += 'Longest Road: ' + JSON.stringify(this.longestRoad) + '\n'
     o +=
       'Free Roads: ' +
       this.freeRoads +
-      ' hasRolled: ' +
+      ' | hasRolled: ' +
       this.hasRolled +
-      ' winner: ' +
+      ' | winner: ' +
       this.winner +
       '\n'
     if (this.mustDiscard.includes(true)) o += 'mustDiscard: ' + this.mustDiscard.toString() + '\n'

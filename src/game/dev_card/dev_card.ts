@@ -21,7 +21,7 @@ export const devCardStr = (c: DevCard) => {
     case DevCard.VictoryPoint:
       return 'victory point'
     case DevCard.YearOfPlenty:
-      return 'year of plenty'
+      return 'yop'
     case DevCard.Monopoly:
       return 'monopoly'
     default:
