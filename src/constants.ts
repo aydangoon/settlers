@@ -25,6 +25,8 @@ export const MIN_LARGEST_ARMY: number = 3
 
 export const BANK_RATE: number = 4
 
+export const VPS_TO_WIN: number = 10
+
 /**
  * If you have more than `ROBBER_LIMIT` cards when a 7 is rolled, you must
  * discard half your cards.

@@ -18,6 +18,7 @@ import {
   NUM_NODES,
   MIN_LONGEST_ROAD,
   MIN_LARGEST_ARMY,
+  VPS_TO_WIN,
 } from './constants'
 import Player from './player'
 import ResourceBundle from './resource_bundle'
@@ -70,6 +71,8 @@ export class Game {
   private tradeOffers: TradeOffer[]
   /** The current phase of the game. */
   private phase: GamePhase
+  /** The winner. */
+  private winner: number
   /** The current turn's state, i.e. Postroll, preroll, etc. */
   private turnState: TurnState
   /** The number of roads the current turn's player can place for no cost. */
@@ -100,11 +103,28 @@ export class Game {
     this.hasRolled = false
 
     this.phase = GamePhase.SetupForward
+    this.winner = -1
 
     this.turnState = TurnState.SetupSettlement
     this.mustDiscard = [...Array(NUM_PLAYERS)].map(() => false)
     this.largestArmy = { owner: -1, size: MIN_LARGEST_ARMY - 1 }
     this.longestRoad = { owner: -1, length: MIN_LONGEST_ROAD - 1 }
+  }
+
+  private transferLongestRoad(owner: number, length: number) {
+    if (this.longestRoad.owner !== -1) this.players[this.longestRoad.owner].victoryPoints -= 2
+    this.longestRoad = { owner, length }
+    this.players[owner].victoryPoints += 2
+  }
+
+  private checkWinner() {
+    for (let i = 0; i < NUM_PLAYERS; i++) {
+      if (this.players[i].victoryPoints >= VPS_TO_WIN) {
+        this.phase = GamePhase.Finished
+        this.winner = i
+        return
+      }
+    }
   }
 
   // ============================ do_ helper methods ============================
@@ -173,6 +193,17 @@ export class Game {
     if (this.phase === GamePhase.Playing) {
       this.board.nodes[node].buildSettlement(this.turn)
       this.players[this.turn].resources.subtract(ResourceBundle.settlementCost)
+
+      // If you don't own the longest road, we need to check if your built settlement
+      // disrupted who has the longest road.
+      if (this.longestRoad.owner !== this.turn) {
+        for (let i = 0; i < NUM_PLAYERS; i++) {
+          const myLength = this.board.getLongestRoad(i)
+          if (myLength > this.longestRoad.length) this.transferLongestRoad(i, myLength)
+        }
+      }
+
+      this.checkWinner()
     } else {
       // Setup case. just build the settlement where requested.
       this.board.nodes[node].buildSettlement(this.turn)
@@ -205,13 +236,15 @@ export class Game {
       } else {
         this.freeRoads--
       }
+
+      // If you build a road during play and you don't already have the longest road,
+      // we need check if you now have the longest road.
       const { owner, length } = this.longestRoad
       if (owner !== this.turn) {
         const myLength = this.board.getLongestRoad(this.turn)
         if (myLength > length) {
-          if (owner !== -1) this.players[owner].victoryPoints -= 2
-          this.longestRoad = { owner: this.turn, length: myLength }
-          this.players[this.turn].victoryPoints += 2
+          this.transferLongestRoad(this.turn, myLength)
+          this.checkWinner()
         }
       }
     } else {
@@ -241,6 +274,7 @@ export class Game {
     this.board.nodes[node].buildCity()
     this.players[this.turn].resources.subtract(ResourceBundle.cityCost)
     this.players[this.turn].victoryPoints++
+    this.checkWinner()
   }
 
   // Play dev cards.
@@ -253,6 +287,7 @@ export class Game {
       if (owner !== -1) this.players[owner].victoryPoints -= 2
       this.players[this.turn].victoryPoints += 2
       this.largestArmy = { owner: this.turn, size: this.players[this.turn].knightsPlayed }
+      this.checkWinner()
     }
     this.turnState = TurnState.MovingRobber
   }
@@ -323,7 +358,10 @@ export class Game {
     const { card } = action.payload as DrawDevCardPayload
     this.players[this.turn].devCards.add(card)
     this.deck.remove(card)
-    if (card === DevCard.VictoryPoint) this.players[this.turn].victoryPoints++
+    if (card === DevCard.VictoryPoint) {
+      this.players[this.turn].victoryPoints++
+      this.checkWinner()
+    }
   }
 
   private do_exchange(action: Action) {
