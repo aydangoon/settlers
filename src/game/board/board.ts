@@ -21,16 +21,21 @@ import Loggable from '../loggable'
  * a call to its public interface violates game state.
  */
 export class Board implements Loggable {
+  /** List of node objects, indexable by node number. */
   readonly nodes: Node[]
+  /** Graph of nodes. Edge weight -1 indicates connection edge weight > -1 indicates road
+   * for the player number of that weight.
+   */
   readonly roadnetwork: Graph<number>
+  /** List of tiles objects indexable by tile number. */
   readonly tiles: Tile[]
+  /** The tile number the robber is on. */
   public robber: number = -1
 
   constructor() {
     this.roadnetwork = this.generateRoadNetwork()
     this.nodes = this.generateNodes()
-    // Generate tiles & set robber.
-    this.tiles = this.generateTiles()
+    this.tiles = this.generateTiles() // Generate tiles & set robber.
   }
 
   private generateRoadNetwork() {
@@ -217,6 +222,11 @@ export class Board implements Loggable {
     return Math.max(0, ...ccs.map((cc) => this.longestRoadOn(cc)))
   }
 
+  /**
+   * Get players who can be robbed.
+   * @returns List of player numbers who have structures on nodes incident on
+   * the robber tile.
+   */
   public playersOnRobber(): number[] {
     return this.robber !== -1
       ? [
@@ -240,6 +250,13 @@ export class Board implements Loggable {
     this.roadnetwork.setWeight(nid0, nid1, player)
   }
 
+  /**
+   * Get the player number for a road between two nodes.
+   * @param nid0 First node.
+   * @param nid1 Second node.
+   * @returns -1 If no road or if the nodes aren't adjacent. The player number
+   * of the road otherwise.
+   */
   public getRoad(nid0: number, nid1: number) {
     return this.roadnetwork.getWeight(nid0, nid1)
   }

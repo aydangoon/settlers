@@ -9,6 +9,11 @@ export enum DevCard {
   RoadBuilder,
 }
 
+/**
+ * Get the string representation of a dev card.
+ * @param c The Dev card.
+ * @returns The string representation.
+ */
 export const devCardStr = (c: DevCard) => {
   switch (c) {
     case DevCard.Knight:

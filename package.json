@@ -1,12 +1,12 @@
 {
   "name": "settlers",
   "version": "1.0.0",
-  "description": "core logic for a settlers game instance",
+  "description": "Core logic for a settlers game instance.",
   "repository": {
     "type": "git",
     "url": "https://github.com/aydangoon/settlers.git"
   },
-  "main": "build/index.js",
+  "main": "./build/src/cli.js",
   "scripts": {
     "cli": "node ./build/src/cli.js",
     "start": "npm run build && node build/src/index.js",
