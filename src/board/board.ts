@@ -8,10 +8,10 @@ import {
 } from '../constants'
 import Node from './node'
 import Tile from './tile'
-import { connectedComponents, Graph, maxTrail, weightedRandom } from '../utils'
+import { connectedComponents, maxTrail, weightedRandom } from '../utils'
+import Graph from './graph'
 import Port from './port'
 import Resource from '../resource'
-import RoadNetwork from './road_network'
 import Loggable from '../loggable'
 
 /**
@@ -22,15 +22,45 @@ import Loggable from '../loggable'
  */
 export class Board implements Loggable {
   readonly nodes: Node[]
-  readonly roadnetwork: RoadNetwork
+  readonly roadnetwork: Graph<number>
   readonly tiles: Tile[]
   public robber: number = -1
 
   constructor() {
-    this.roadnetwork = new RoadNetwork()
+    this.roadnetwork = this.generateRoadNetwork()
     this.nodes = this.generateNodes()
     // Generate tiles & set robber.
     this.tiles = this.generateTiles()
+  }
+
+  private generateRoadNetwork() {
+    const g = new Graph<number>([...Array(NUM_NODES)].map((_, i) => i))
+
+    // Establish our connections.
+    const rowSize = [7, 9, 11, 11, 9, 7] // nodes per row
+    const downOffset = [8, 10, 11, 10, 8]
+
+    let col = 0
+    let row = 0
+    for (let i = 0; i < NUM_NODES; i++) {
+      // establish the connection between node and its right node
+      if (col + 1 !== rowSize[row]) {
+        g.addEdge(i, i + 1)
+      }
+      // establish the conneciton between node and its downward node
+      if (row < 3 && col % 2 == 0) {
+        g.addEdge(i, i + downOffset[row])
+      } else if ((row == 3 || row == 4) && col % 2 == 1) {
+        g.addEdge(i, i + downOffset[row])
+      }
+
+      col++
+      if (col == rowSize[row]) {
+        col = 0
+        row++
+      }
+    }
+    return g
   }
 
   private generateNodes() {
@@ -138,10 +168,11 @@ export class Board implements Loggable {
    * @param g The graph. Every node degree is on [0, 3].
    * @returns The length of the longest trail.
    */
-  private longestRoadOn(g: Graph): number {
+  private longestRoadOn(g: Graph<string>): number {
     const oddDeg = []
-    for (let i = 0; i < g.size(); i++) {
-      if (g.degree(i) % 2 === 1) oddDeg.push(i)
+    const nodes = g.nodes()
+    for (let i = 0; i < nodes.length; i++) {
+      if (g.degree(nodes[i]) % 2 === 1) oddDeg.push(nodes[i])
     }
     // If at most 2 odd-degree, eulerian path exists, just return edgeCount.
     return oddDeg.length <= 2 ? g.edgeCount() : Math.max(...oddDeg.map((i) => maxTrail(g, i)))
@@ -160,7 +191,7 @@ export class Board implements Loggable {
     for (let i = 0; i < NUM_NODES; i++) {
       const node: Node = this.nodes[i]
       // Check right.
-      if (this.roadnetwork.getRoad(i, i + 1) === player) {
+      if (this.roadnetwork.getWeight(i, i + 1) === player) {
         if (!node.isEmpty() && node.getPlayer() !== player) {
           edges.push([`${i}_l`, `${i + 1}`])
         } else if (!this.nodes[i + 1].isEmpty() && this.nodes[i + 1].getPlayer() !== player) {
@@ -170,8 +201,8 @@ export class Board implements Loggable {
         }
       }
       // Check down
-      const below = this.roadnetwork.adjacentTo(i).filter((id) => id > i + 1)[0]
-      if (below !== undefined && this.roadnetwork.getRoad(i, below) === player) {
+      const below = this.roadnetwork.children(i).filter((id) => id > i + 1)[0]
+      if (below !== undefined && this.roadnetwork.getWeight(i, below) === player) {
         if (!node.isEmpty() && node.getPlayer() !== player) {
           edges.push([`${i}_u`, `${below}`])
         } else if (!this.nodes[below].isEmpty() && this.nodes[below].getPlayer() !== player) {
@@ -182,7 +213,7 @@ export class Board implements Loggable {
       }
     }
 
-    const ccs: Graph[] = connectedComponents(new Graph(edges))
+    const ccs: Graph<string>[] = connectedComponents(new Graph<string>(edges))
     return Math.max(...ccs.map((cc) => this.longestRoadOn(cc)))
   }
 
@@ -197,6 +228,28 @@ export class Board implements Loggable {
         ]
       : []
   }
+
+  /**
+   * Build a road for player number `player`, if one doesn't already
+   * exist, between nodes `nid0` and `nid1`.
+   * @param nid0 First node.
+   * @param nid1 Second node.
+   * @param player The player number.
+   */
+  public buildRoad(nid0: number, nid1: number, player: number) {
+    this.roadnetwork.setWeight(nid0, nid1, player)
+  }
+
+  public getRoad(nid0: number, nid1: number) {
+    return this.roadnetwork.getWeight(nid0, nid1)
+  }
+
+  /**
+   * Get all adjacent nodes.
+   * @param nid The node id we want to get the adjacent nodes for.
+   * @returns List of adjacent node ids.
+   */
+  public adjacentTo = (nid: number) => this.roadnetwork.children(nid)
 
   toLog = () => {
     const max = 11

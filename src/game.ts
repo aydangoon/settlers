@@ -199,7 +199,7 @@ export class Game {
   private do_buildRoad(action: Action) {
     const { node0, node1 } = action.payload as BuildRoadPayload
     if (this.phase === GamePhase.Playing) {
-      this.board.roadnetwork.buildRoad(node0, node1, this.turn)
+      this.board.buildRoad(node0, node1, this.turn)
       if (this.freeRoads === 0) {
         this.players[this.turn].resources.subtract(ResourceBundle.roadCost)
       } else {
@@ -216,7 +216,7 @@ export class Game {
       }
     } else {
       // Setup case. just build the road where requested.
-      this.board.roadnetwork.buildRoad(node0, node1, this.turn)
+      this.board.buildRoad(node0, node1, this.turn)
       if (this.phase === GamePhase.SetupForward) {
         if (this.turn === NUM_PLAYERS - 1) {
           this.phase = GamePhase.SetupBackward
@@ -491,19 +491,17 @@ export class Game {
       const { node0, node1 } = <BuildRoadPayload>payload
       const nodesValid = node0 > -1 && node1 > -1 && node0 < NUM_NODES && node1 < NUM_NODES
       if (!nodesValid) return false
-      const adj0 = this.board.roadnetwork.adjacentTo(node0)
-      const adj1 = this.board.roadnetwork.adjacentTo(node1)
+      const adj0 = this.board.adjacentTo(node0)
+      const adj1 = this.board.adjacentTo(node1)
       return (
         adj0.includes(node1) && // nodes adjacent and
-        this.board.roadnetwork.getRoad(node0, node1) === -1 && // no road there yet and
+        this.board.getRoad(node0, node1) === -1 && // no road there yet and
         (this.phase !== GamePhase.Playing ||
           this.players[this.turn].resources.has(ResourceBundle.roadCost)) && // can buy a road or its setup
         (this.board.nodes[node0].getPlayer() === this.turn || // settlement on node 0 or
           this.board.nodes[node1].getPlayer() === this.turn || // settlement on node 1 or
-          adj0.find((onid0) => this.board.roadnetwork.getRoad(onid0, node0) === this.turn) !==
-            undefined || // road we own incident on node 0 or
-          adj1.find((onid1) => this.board.roadnetwork.getRoad(onid1, node1) !== this.turn) !==
-            undefined) // road we own incident on node 1
+          adj0.find((onid0) => this.board.getRoad(onid0, node0) === this.turn) !== undefined || // road we own incident on node 0 or
+          adj1.find((onid1) => this.board.getRoad(onid1, node1) !== this.turn) !== undefined) // road we own incident on node 1
       )
     } else if (type === ActionType.Discard) {
       const { bundle } = payload as DiscardPayload

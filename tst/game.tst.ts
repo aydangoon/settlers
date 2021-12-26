@@ -2,7 +2,7 @@ import assert, { strictEqual, notStrictEqual } from 'assert'
 import Action, { ActionType, RollPayload } from '../src/action'
 import Game, { GamePhase } from '../src/game'
 import { TurnState } from '../src/turn_fsm'
-/*
+
 describe('handle roll action', () => {
   const game: any = new Game()
 
@@ -47,7 +47,7 @@ describe('roll & endturn actions', () => {
     assert.strictEqual(game.turn, 2)
   })
 })
-*/
+
 describe('setup phases', () => {
   it('works', () => {
     const g: Game = new Game()

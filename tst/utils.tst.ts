@@ -1,14 +1,15 @@
 import { notStrictEqual, strict, strictEqual } from 'assert'
 import chai from 'chai'
-import { BFSTraveral, breadthFirstSearch, connectedComponents, Graph, maxTrail } from '../src/utils'
+import Graph from '../src/board/graph'
+import { BFSTraveral, breadthFirstSearch, connectedComponents, maxTrail } from '../src/utils'
 
 describe('graph basic tests', () => {
   it('works :)', () => {
-    const g = new Graph([
-      ['a', 'b'],
-      ['b', 'c'],
+    const g = new Graph<number>([
+      [0, 1],
+      [1, 2],
     ])
-    strictEqual(g.size(), 3)
+    strictEqual(g.nodeCount(), 3)
     strictEqual(g.hasEdge(0, 1), true)
     strictEqual(g.hasEdge(1, 2), true)
     strictEqual(g.hasEdge(0, 2), false)
@@ -24,26 +25,26 @@ describe('graph basic tests', () => {
 
 describe('breadthFirstSearch()', () => {
   it('works for basic tests :)', () => {
-    const g = new Graph([
-      ['a', 'b'],
-      ['b', 'c'],
-      ['c', 'a'],
+    const g = new Graph<number>([
+      [0, 1],
+      [1, 2],
+      [2, 0],
     ])
-    const b: BFSTraveral = breadthFirstSearch(g, 0)
+    const b = breadthFirstSearch<number>(g, 0)
     chai.expect([...b.visited]).to.have.members([0, 1, 2])
     strictEqual(b.depth, 1)
   })
 
   it('works for more advanced tests', () => {
-    const g = new Graph([
-      ['a', 'b'],
-      ['b', 'c'],
-      ['c', 'a'],
-      ['c', 'd'],
-      ['d', 'e'],
-      ['f', 'g'],
+    const g = new Graph<number>([
+      [0, 1],
+      [1, 2],
+      [2, 0],
+      [2, 3],
+      [3, 4],
+      [5, 6],
     ])
-    const b: BFSTraveral = breadthFirstSearch(g, 0)
+    const b = breadthFirstSearch<number>(g, 0)
     chai.expect([...b.visited]).to.have.members([0, 1, 2, 3, 4])
     strictEqual(b.depth, 3)
   })
@@ -51,9 +52,9 @@ describe('breadthFirstSearch()', () => {
 
 describe('connectedComponents()', () => {
   it('works for 1 cc', () => {
-    const g = new Graph([
-      ['a', 'b'],
-      ['b', 'c'],
+    const g = new Graph<number>([
+      [0, 1],
+      [1, 2],
     ])
     const ccs = connectedComponents(g)
     strictEqual(ccs.length, 1)
@@ -62,11 +63,11 @@ describe('connectedComponents()', () => {
   })
 
   it('works for multiple cc', () => {
-    const g = new Graph([
-      ['a', 'b'],
-      ['b', 'c'],
-      ['e', 'f'],
-      ['g', 'h'],
+    const g = new Graph<number>([
+      [0, 1],
+      [1, 2],
+      [4, 5],
+      [6, 7],
     ])
     const ccs = connectedComponents(g)
     strictEqual(ccs.length, 3)
@@ -77,43 +78,43 @@ describe('connectedComponents()', () => {
 
 describe('maxTrail()', () => {
   it('works :)', () => {
-    const g = new Graph([
-      ['a', 'b'],
-      ['b', 'c'],
-      ['c', 'a'],
+    const g = new Graph<number>([
+      [0, 1],
+      [1, 2],
+      [2, 0],
     ])
     strictEqual(maxTrail(g, 0), 3)
 
-    const hex = new Graph([
-      ['0', '1'],
-      ['1', '2'],
-      ['2', '3'],
-      ['3', '4'],
-      ['4', '5'],
-      ['5', '0'],
-      ['5', '6'],
-      ['6', '7'],
+    const hex = new Graph<number>([
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 5],
+      [5, 0],
+      [5, 6],
+      [6, 7],
     ])
     strictEqual(maxTrail(hex, 7), 8)
   })
 
   it('works for double hex problem', () => {
-    const g = new Graph([
-      ['0', '1'],
-      ['1', '2'],
-      ['2', '3'],
-      ['3', '4'],
-      ['4', '5'],
-      ['5', '0'],
+    const g = new Graph<number>([
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 5],
+      [5, 0],
 
-      ['5', '6'],
-      ['6', '7'],
-      ['7', '8'],
-      ['8', '9'],
-      ['9', '4'],
-      ['7', 'a'],
-      ['a', 'b'],
+      [5, 6],
+      [6, 7],
+      [7, 8],
+      [8, 9],
+      [9, 4],
+      [7, 10],
+      [10, 11],
     ])
-    strictEqual(maxTrail(g, g.size() - 1), 12)
+    strictEqual(maxTrail(g, 11), 12)
   })
 })

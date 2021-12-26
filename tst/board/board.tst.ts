@@ -1,4 +1,4 @@
-import { notStrictEqual, strict, strictEqual } from 'assert'
+import { notStrictEqual, strictEqual } from 'assert'
 import chai from 'chai'
 import Board from '../../src/board/board'
 import Tile from '../../src/board/tile'
@@ -29,9 +29,7 @@ describe('board', () => {
       .expect(b.tiles.filter((tile) => tile.resource === Resource.Brick).length)
       .eqls(NUM_EACH_RESOURCE_TILE[Resource.Brick])
     chai
-      .expect(
-        b.tiles.filter((tile) => tile.resource === Resource.Lumber).length
-      )
+      .expect(b.tiles.filter((tile) => tile.resource === Resource.Lumber).length)
       .eqls(NUM_EACH_RESOURCE_TILE[Resource.Lumber])
     chai
       .expect(b.tiles.filter((tile) => tile.resource === Resource.Grain).length)
@@ -40,9 +38,7 @@ describe('board', () => {
       .expect(b.tiles.filter((tile) => tile.resource === Resource.Wool).length)
       .eqls(NUM_EACH_RESOURCE_TILE[Resource.Wool])
 
-    chai
-      .expect(b.tiles.filter((tile) => tile.resource === Resource.None).length)
-      .eqls(1)
+    chai.expect(b.tiles.filter((tile) => tile.resource === Resource.None).length).eqls(1)
 
     // Amounts of each number token are correct.
     const temp = [1, 2, 2, 2, 2]
@@ -62,57 +58,60 @@ describe('board', () => {
 describe('board longestRoad one cc', () => {
   it('works for cases 0, 1', () => {
     const b = new Board()
-    strictEqual(b.roadnetwork.getRoad(0, 1), -1)
+    strictEqual(b.getRoad(0, 1), -1)
     // Case 1
-    b.roadnetwork.buildRoad(0, 1, 0)
-    b.roadnetwork.buildRoad(1, 2, 0)
+    b.buildRoad(0, 1, 0)
+    b.buildRoad(1, 2, 0)
     strictEqual(b.getLongestRoad(0), 2)
-    b.roadnetwork.buildRoad(2, 10, 0)
+    b.buildRoad(2, 10, 0)
     strictEqual(b.getLongestRoad(0), 3)
 
     // Case 0
-    b.roadnetwork.buildRoad(10, 9, 0)
-    b.roadnetwork.buildRoad(9, 8, 0)
-    b.roadnetwork.buildRoad(8, 0, 0)
+    b.buildRoad(10, 9, 0)
+    strictEqual(b.getRoad(10, 9), 0)
+    b.buildRoad(9, 8, 0)
+    strictEqual(b.getRoad(8, 9), 0)
+    b.buildRoad(8, 0, 0)
+    strictEqual(b.getRoad(8, 0), 0)
     strictEqual(b.getLongestRoad(0), 6)
   })
 
   it('works for case 2a', () => {
     const b = new Board()
-    b.roadnetwork.buildRoad(0, 1, 0)
-    b.roadnetwork.buildRoad(1, 2, 0)
-    b.roadnetwork.buildRoad(2, 10, 0)
-    b.roadnetwork.buildRoad(10, 11, 0)
-    b.roadnetwork.buildRoad(11, 21, 0)
+    b.buildRoad(0, 1, 0)
+    b.buildRoad(1, 2, 0)
+    b.buildRoad(2, 10, 0)
+    b.buildRoad(10, 11, 0)
+    b.buildRoad(11, 21, 0)
     strictEqual(b.getLongestRoad(0), 5)
   })
 
   it('works for case 2b simple', () => {
     const b = new Board()
-    b.roadnetwork.buildRoad(0, 1, 0)
-    b.roadnetwork.buildRoad(1, 2, 0)
-    b.roadnetwork.buildRoad(2, 10, 0)
-    b.roadnetwork.buildRoad(10, 9, 0)
-    b.roadnetwork.buildRoad(9, 8, 0)
-    b.roadnetwork.buildRoad(8, 0, 0)
-    b.roadnetwork.buildRoad(7, 8, 0)
-    b.roadnetwork.buildRoad(17, 7, 0)
+    b.buildRoad(0, 1, 0)
+    b.buildRoad(1, 2, 0)
+    b.buildRoad(2, 10, 0)
+    b.buildRoad(10, 9, 0)
+    b.buildRoad(9, 8, 0)
+    b.buildRoad(8, 0, 0)
+    b.buildRoad(7, 8, 0)
+    b.buildRoad(17, 7, 0)
     strictEqual(b.getLongestRoad(0), 8)
   })
 
   it('works for case 2b complex', () => {
     const b = new Board()
     for (let i = 0; i < 4; i++) {
-      b.roadnetwork.buildRoad(i, i + 1, 0)
-      b.roadnetwork.buildRoad(i + 8, i + 9, 0)
+      b.buildRoad(i, i + 1, 0)
+      b.buildRoad(i + 8, i + 9, 0)
     }
-    b.roadnetwork.buildRoad(0, 8, 0)
-    b.roadnetwork.buildRoad(2, 10, 0)
-    b.roadnetwork.buildRoad(4, 12, 0)
+    b.buildRoad(0, 8, 0)
+    b.buildRoad(2, 10, 0)
+    b.buildRoad(4, 12, 0)
     strictEqual(b.getLongestRoad(0), 11)
 
-    b.roadnetwork.buildRoad(12, 13, 0)
-    b.roadnetwork.buildRoad(13, 14, 0)
+    b.buildRoad(12, 13, 0)
+    b.buildRoad(13, 14, 0)
     strictEqual(b.getLongestRoad(0), 12)
   })
 })
@@ -120,23 +119,23 @@ describe('board longestRoad one cc', () => {
 describe('board longestRoad multiple cc', () => {
   it('works for cases 0, 1', () => {
     const b = new Board()
-    strictEqual(b.roadnetwork.getRoad(0, 1), -1)
+    strictEqual(b.getRoad(0, 1), -1)
     // Case 1
-    b.roadnetwork.buildRoad(0, 1, 0)
-    b.roadnetwork.buildRoad(1, 2, 0)
+    b.buildRoad(0, 1, 0)
+    b.buildRoad(1, 2, 0)
 
     // build an arbitrary random road somewhere else
-    b.roadnetwork.buildRoad(27, 28, 0)
-    strictEqual(b.roadnetwork.getRoad(27, 28), 0)
+    b.buildRoad(27, 28, 0)
+    strictEqual(b.getRoad(27, 28), 0)
 
     strictEqual(b.getLongestRoad(0), 2)
-    b.roadnetwork.buildRoad(2, 10, 0)
+    b.buildRoad(2, 10, 0)
     strictEqual(b.getLongestRoad(0), 3)
 
     // Case 0
-    b.roadnetwork.buildRoad(10, 9, 0)
-    b.roadnetwork.buildRoad(9, 8, 0)
-    b.roadnetwork.buildRoad(8, 0, 0)
+    b.buildRoad(10, 9, 0)
+    b.buildRoad(9, 8, 0)
+    b.buildRoad(8, 0, 0)
     strictEqual(b.getLongestRoad(0), 6)
   })
 })

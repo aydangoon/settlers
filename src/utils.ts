@@ -3,6 +3,8 @@
  * @module
  */
 
+import Graph from './board/graph'
+
 /**
  * Returns a index from a weighted array.
  * @param weights An array of weights
@@ -31,99 +33,19 @@ export const rollDie = () => uniformRandom(1, 6)
 export const uniformRandom = (lo: number, hi: number) =>
   Math.floor(Math.random() * (hi - lo + 1)) + lo
 
-/**
- * An undirected, unweighted, simple graph with a fixed maximum
- * number of nodes on initialization and implemented with
- * an adjacency matrix. Nodes are numbers.
- */
-export class Graph {
-  /** Internal adjacency matrix */
-  private mat: boolean[][]
-
-  /**
-   *
-   * @param edges A list of string tuples [a, b] representing
-   * that an edge existing between a and b
-   */
-  constructor(edges: [string, string][]) {
-    let index = 0
-    const idMap: { [key: string]: number } = {}
-
-    // Count number of unique nodes.
-    for (let i = 0; i < edges.length; i++) {
-      const [u, v] = edges[i]
-      if (!(u in idMap)) idMap[u] = index++
-      if (!(v in idMap)) idMap[v] = index++
-    }
-
-    // Instantiate mat to all false.
-    this.mat = [...Array(index)].map(() => [...Array(index)].map(() => false))
-
-    // Add each edge.
-    for (let i = 0; i < edges.length; i++) {
-      const [u, v] = edges[i]
-      this.mat[idMap[u]][idMap[v]] = true
-      this.mat[idMap[v]][idMap[u]] = true
-    }
-  }
-
-  public hasEdge = (u: number, v: number) => this.mat[u][v]
-
-  public addEdge(u: number, v: number) {
-    this.mat[u][v] = true
-    this.mat[v][u] = true
-  }
-
-  public deleteEdge(u: number, v: number) {
-    this.mat[u][v] = false
-    this.mat[v][u] = false
-  }
-
-  public degree = (u: number) => this.mat[u].reduce((acc, curr) => acc + (curr ? 1 : 0), 0)
-
-  public children = (u: number): number[] => {
-    const children: number[] = []
-    for (let i = 0; i < this.mat[u].length; i++) {
-      if (this.mat[u][i]) children.push(i)
-    }
-    return children
-  }
-  public size = () => this.mat.length
-
-  public edgeCount = () => {
-    let count = 0
-    for (let i = 0; i < this.mat.length; i++) {
-      count += this.degree(i)
-    }
-    return Math.floor(count / 2)
-  }
-}
-
-export function maxTrailRec(v: number, g: Graph, seen: boolean[][]): number {
-  const choices = g.children(v).filter((other) => !seen[v][other])
-  let u: number, ret: number
-  if (choices.length === 0) {
-    ret = 0
-  } else if (choices.length === 1) {
-    u = choices[0]
-    seen[u][v] = true
-    seen[v][u] = true
-    ret = 1 + maxTrailRec(u, g, seen)
-    seen[u][v] = false
-    seen[v][u] = false
-  } else {
-    u = choices[0]
-    seen[u][v] = true
-    seen[v][u] = true
-    ret = 1 + maxTrailRec(u, g, seen)
-    seen[u][v] = false
-    seen[v][u] = false
+export function maxTrailRec<T>(v: T, g: Graph<T>, seen: Graph<T>): number {
+  const choices = g.children(v).filter((other) => !seen.hasEdge(v, other))
+  if (choices.length === 0) return 0
+  let u: T, ret: number
+  u = choices[0]
+  seen.addEdge(u, v)
+  ret = 1 + maxTrailRec(u, g, seen)
+  seen.deleteEdge(u, v)
+  if (choices.length === 2) {
     u = choices[1]
-    seen[u][v] = true
-    seen[v][u] = true
+    seen.addEdge(u, v)
     ret = Math.max(ret, 1 + maxTrailRec(u, g, seen))
-    seen[u][v] = false
-    seen[v][u] = false
+    seen.deleteEdge(u, v)
   }
   return ret
 }
@@ -134,56 +56,56 @@ export function maxTrailRec(v: number, g: Graph, seen: boolean[][]): number {
  * @param g
  * @param src
  */
-export const maxTrail = (g: Graph, src: number): number => {
-  const seen = [...Array(g.size())].map(() => [...Array(g.size())].map(() => false))
+export const maxTrail = <T>(g: Graph<T>, src: T): number => {
+  const seen = new Graph<T>(g.nodes())
   return maxTrailRec(src, g, seen)
 }
 
-export const connectedComponents = (g: Graph): Graph[] => {
-  let remaining = [...Array(g.size())].map((_, i) => i)
-  const ccs: number[][] = []
+export const connectedComponents = <T>(g: Graph<T>): Graph<T>[] => {
+  let remaining = g.nodes()
+  const ccs: Graph<T>[] = []
   while (remaining.length > 0) {
     const src = remaining[0]
     const { visited } = breadthFirstSearch(g, src)
-    ccs.push([...visited])
+    const li = [...visited]
+    const cc = new Graph<T>(li)
+
+    for (let i = 0; i < li.length; i++) {
+      for (let j = i + 1; j < li.length; j++) {
+        if (g.hasEdge(li[i], li[j])) cc.addEdge(li[i], li[j])
+      }
+    }
+    ccs.push(cc)
     remaining = remaining.filter((elt) => !visited.has(elt))
   }
-
-  // Kinda cringe but it has to be done.
-  return ccs.map((cc) => {
-    const edges: [string, string][] = []
-    cc.forEach((u) => {
-      cc.forEach((v) => {
-        if (g.hasEdge(u, v)) edges.push([u.toString(), v.toString()])
-      })
-    })
-    return new Graph(edges)
-  })
+  return ccs
 }
 
-export interface BFSTraveral {
-  visited: Set<number>
+export interface BFSTraveral<T> {
+  visited: Set<T>
   depth: number
 }
 
-export const breadthFirstSearch = (g: Graph, src: number): BFSTraveral => {
+export const breadthFirstSearch = <T>(g: Graph<T>, src: T): BFSTraveral<T> => {
   const queue = [src]
-  const visited = new Set<number>([src])
-  const depths: { [key: number]: number } = { [src]: 0 }
+  const visited = new Set<T>([src])
+  const depths = new Map<T, number>()
+  depths.set(src, 0)
 
   while (queue.length > 0) {
-    const curr = queue.pop()
-    const children = g.children(curr!)
+    const curr: T = queue.pop()!
+    const children = g.children(curr)
     for (let i = 0; i < children.length; i++) {
-      if (visited.has(children[i])) continue
-      queue.unshift(children[i])
-      visited.add(children[i])
-      depths[children[i]] = depths[curr!] + 1
+      const child = children[i]
+      if (visited.has(child)) continue
+      queue.unshift(child)
+      visited.add(child)
+      depths.set(child, depths.get(curr)! + 1)
     }
   }
 
   return {
     visited,
-    depth: Math.max(...Object.keys(depths).map((k) => depths[parseInt(k)])),
+    depth: Math.max(...depths.values()),
   }
 }
