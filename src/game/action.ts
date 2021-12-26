@@ -41,6 +41,47 @@ export enum ActionType {
   EndTurn,
 }
 
+export const actionTypeStr = (a: ActionType) => {
+  switch (a) {
+    case ActionType.Roll:
+      return 'Roll'
+    case ActionType.PlayRobber:
+      return 'Play Robber'
+    case ActionType.MoveRobber:
+      return 'Move Robber'
+    case ActionType.Rob:
+      return 'Rob'
+    case ActionType.PlayMonopoly:
+      return 'Play Monopoly'
+    case ActionType.SelectMonopolyResource:
+      return 'Select Monopoly Resource'
+    case ActionType.PlayYearOfPlenty:
+      return 'Play YOP'
+    case ActionType.SelectYearOfPlentyResources:
+      return 'Select YOP Resources'
+    case ActionType.PlayRoadBuilder:
+      return 'Play Road Builder'
+    case ActionType.BuildSettlement:
+      return 'Build Settlement'
+    case ActionType.BuildCity:
+      return 'Build City'
+    case ActionType.BuildRoad:
+      return 'Build Road'
+    case ActionType.Discard:
+      return 'Discard'
+    case ActionType.MakeTradeOffer:
+      return 'Make Trade Offer'
+    case ActionType.DecideOnTradeOffer:
+      return 'Decide on Trade Offer'
+    case ActionType.DrawDevCard:
+      return 'Draw Dev Card'
+    case ActionType.Exchange:
+      return 'Exchange'
+    default:
+      return 'End Turn'
+  }
+}
+
 export interface ActionPayload {}
 
 export interface ExchangePayload extends ActionPayload {

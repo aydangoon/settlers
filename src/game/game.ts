@@ -65,7 +65,9 @@ export class Game implements Loggable {
   /** The board. */
   private board: Board
   /** The current turn number takes on a value of: [0, NUM_PLAYERS] */
-  private turn: number
+  public turn: number
+  /** The last roll */
+  private lastRoll: number
   /** List of player objects. Indexable by player number. */
   private players: Player[]
   /** A list of open trade offers in the current turn. */
@@ -105,6 +107,7 @@ export class Game implements Loggable {
 
     this.phase = GamePhase.SetupForward
     this.winner = -1
+    this.lastRoll = -1
 
     this.turnState = TurnState.SetupSettlement
     this.mustDiscard = [...Array(NUM_PLAYERS)].map(() => false)
@@ -137,6 +140,7 @@ export class Game implements Loggable {
 
   private do_roll(action: Action) {
     const { value } = action.payload as RollPayload
+    this.lastRoll = value
     if (value !== 7) {
       // Standard case. Hand out resources.
 
@@ -228,10 +232,12 @@ export class Game implements Loggable {
       }
     }
     this.currPlayer().victoryPoints++
+    this.currPlayer().settlements--
   }
 
   private do_buildRoad(action: Action) {
     const { node0, node1 } = action.payload as BuildRoadPayload
+    this.currPlayer().roads--
     if (this.phase === GamePhase.Playing) {
       this.board.buildRoad(node0, node1, this.turn)
       if (this.freeRoads === 0) {
@@ -277,6 +283,7 @@ export class Game implements Loggable {
     this.board.nodes[node].buildCity()
     this.currPlayer().resources.subtract(ResourceBundle.cityCost)
     this.currPlayer().victoryPoints++
+    this.currPlayer().cities--
     this.checkWinner()
   }
 
@@ -516,6 +523,8 @@ export class Game implements Loggable {
         node > -1 &&
         node < NUM_TILES &&
         this.board.nodes[node].isEmpty() &&
+        this.board.adjacentTo(node).find((other) => !this.board.nodes[other].isEmpty()) ===
+          undefined &&
         (this.phase !== GamePhase.Playing ||
           this.currPlayer().resources.has(ResourceBundle.settlementCost))
       )
@@ -596,9 +605,18 @@ export class Game implements Loggable {
   }
 
   toLog = () => {
-    let o =
-      '========================================================================================\n'
-    o += 'phase: ' + this.phase + ' | turnState: ' + this.turnState + ' | turn: ' + this.turn + '\n'
+    let o = ''
+    o += this.board.toLog() + '\n'
+    o +=
+      'lastRoll: ' +
+      this.lastRoll +
+      ' | phase: ' +
+      this.phase +
+      ' | turnState: ' +
+      this.turnState +
+      ' | turn: ' +
+      this.turn +
+      '\n'
     o += 'Players: \n'
     for (let i = 0; i < NUM_PLAYERS; i++) o += this.players[i].toLog() + '\n'
     o += 'Bank: ' + this.bank.toLog() + '\n'

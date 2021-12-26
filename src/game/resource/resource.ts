@@ -27,7 +27,7 @@ export const resStr = (res: Resource) => {
     case Resource.Wool:
       return 'wool'
     default:
-      'none'
+      return 'none'
   }
 }
 

@@ -11,7 +11,7 @@ import Tile from './tile'
 import { connectedComponents, maxTrail, weightedRandom } from '../utils'
 import Graph from './graph'
 import Port from './port'
-import Resource from '../resource/resource'
+import Resource, { resStr } from '../resource/resource'
 import Loggable from '../loggable'
 
 /**
@@ -269,22 +269,21 @@ export class Board implements Loggable {
   public adjacentTo = (nid: number) => this.roadnetwork.children(nid)
 
   toLog = () => {
-    const max = 11
-    const rowSize = [max - 4, max - 2, max, max, max - 2, max - 4]
-    let col = 0
-    let row = 0
-    let str: string = '\t'.repeat(Math.floor((max - rowSize[row]) / 2))
+    let o =
+      'tiles: [ ' +
+      this.tiles
+        .map((tile, i) => `id: ${i} | ${resStr(tile.resource)} | ${tile.getNumber()}`)
+        .join(', ') +
+      ' ]\nnodes: [ '
     for (let i = 0; i < this.nodes.length; i++) {
-      str += this.nodes[i].toLog() + '\t'
-      col++
-      if (col === rowSize[row]) {
-        str += '\n\n\n'
-        col = 0
-        row++
-        str += '\t'.repeat(Math.floor((max - rowSize[row]) / 2))
+      if (!this.nodes[i].isEmpty()) {
+        o += `id: ${i} | ${this.nodes[i].getPlayer()} | ${
+          this.nodes[i].hasCity() ? 'city' : 'settlement'
+        }, `
       }
     }
-    return str
+    o += ` ]\nrobber: ${this.robber}`
+    return o
   }
 }
 
