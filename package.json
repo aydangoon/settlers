@@ -17,7 +17,7 @@
     "coverage": "nyc npm run test",
     "build": "rm -rf ./build/ && tsc",
     "docs": "typedoc && open doc/index.html",
-    "dist": "npx webpack --stats verbose --progress"
+    "dist": "tsc --project ./dist_tsconfig.json"
   },
   "author": "aydang",
   "devDependencies": {
@@ -30,10 +30,7 @@
     "mocha": "^9.1.3",
     "nyc": "^15.1.0",
     "prettier": "^2.5.1",
-    "ts-loader": "^9.2.6",
     "typedoc": "^0.22.10",
-    "typescript": "^4.5.4",
-    "webpack": "^5.65.0",
-    "webpack-cli": "^4.9.1"
+    "typescript": "^4.5.4"
   }
 }
