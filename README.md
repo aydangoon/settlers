@@ -1,10 +1,11 @@
-# What is?
+# What is this package?
 
 The core logic for a Settlers game instance.
 
-# Project Structure
+# Project structure
 
 - `src`: sources files
 - `tst`: test files
-- `build`: build folder for compiles typescript
-- `doc`: folder for compiled docs
+- `build`: build directory for compiled typescript
+- `doc`: directory for compiled docs
+- `dist`: directory for webpack'd code and type definition file.s
