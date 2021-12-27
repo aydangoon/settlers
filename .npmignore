@@ -1,0 +1,8 @@
+src
+tst
+node_modules
+build
+assets
+.nyc_output
+.DS_Store
+.prettierrc
