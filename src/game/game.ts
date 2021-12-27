@@ -57,19 +57,25 @@ export enum GamePhase {
   Finished = 'Finished',
 }
 
+/**
+ * We design the game object to have a "reasonable" level of protection. We do this
+ * to balance data protection with ease of access and to avoid large overhead from
+ * getters/setters. The rule of thumb is primitives are private and have getters,
+ * and objects are readonly. However, some objects, such as the board, are private.
+ */
 export class Game implements Loggable {
   /** A resource bundle for the bank. */
-  private bank: ResourceBundle
+  readonly bank: ResourceBundle
   /** The dev card deck. */
-  private deck: DevCardBundle
+  readonly deck: DevCardBundle
   /** The board. */
-  private board: Board
+  private readonly board: Board
   /** The current turn number takes on a value of: [0, NUM_PLAYERS] */
-  public turn: number
+  private turn: number
   /** The last roll */
   private lastRoll: number
   /** List of player objects. Indexable by player number. */
-  private players: Player[]
+  readonly players: Player[]
   /** A list of open trade offers in the current turn. */
   private tradeOffers: TradeOffer[]
   /** The current phase of the game. */
@@ -85,9 +91,9 @@ export class Game implements Loggable {
   /** Boolean indicating if we have rolled on the current turn yet. */
   private hasRolled: boolean
   /** [owner, amount] of largest army. */
-  private largestArmy: { owner: number; size: number }
+  readonly largestArmy: { owner: number; size: number }
   /** [owner, length] of longest road */
-  private longestRoad: { owner: number; length: number }
+  readonly longestRoad: { owner: number; len: number }
 
   constructor() {
     this.bank = new ResourceBundle(NUM_EACH_RESOURCE)
@@ -112,12 +118,13 @@ export class Game implements Loggable {
     this.turnState = TurnState.SetupSettlement
     this.mustDiscard = [...Array(NUM_PLAYERS)].map(() => false)
     this.largestArmy = { owner: -1, size: MIN_LARGEST_ARMY - 1 }
-    this.longestRoad = { owner: -1, length: MIN_LONGEST_ROAD - 1 }
+    this.longestRoad = { owner: -1, len: MIN_LONGEST_ROAD - 1 }
   }
 
   private transferLongestRoad(owner: number, length: number) {
     if (this.longestRoad.owner !== -1) this.players[this.longestRoad.owner].victoryPoints -= 2
-    this.longestRoad = { owner, length }
+    this.longestRoad.owner = owner
+    this.longestRoad.len = length
     this.players[owner].victoryPoints += 2
   }
 
@@ -211,7 +218,7 @@ export class Game implements Loggable {
       if (this.longestRoad.owner !== this.turn) {
         for (let i = 0; i < NUM_PLAYERS; i++) {
           const myLength = this.board.getLongestRoad(i)
-          if (myLength > this.longestRoad.length) this.transferLongestRoad(i, myLength)
+          if (myLength > this.longestRoad.len) this.transferLongestRoad(i, myLength)
         }
       }
 
@@ -261,10 +268,10 @@ export class Game implements Loggable {
 
       // If you build a road during play and you don't already have the longest road,
       // we need check if you now have the longest road.
-      const { owner, length } = this.longestRoad
+      const { owner, len } = this.longestRoad
       if (owner !== this.turn) {
         const myLength = this.board.getLongestRoad(this.turn)
-        if (myLength > length) {
+        if (myLength > len) {
           this.transferLongestRoad(this.turn, myLength)
           this.checkWinner()
         }
@@ -314,7 +321,8 @@ export class Game implements Loggable {
     if (owner !== this.turn && this.currPlayer().knightsPlayed > size) {
       if (owner !== -1) this.players[owner].victoryPoints -= 2
       this.currPlayer().victoryPoints += 2
-      this.largestArmy = { owner: this.turn, size: this.currPlayer().knightsPlayed }
+      this.largestArmy.owner = this.turn
+      this.largestArmy.size = this.currPlayer().knightsPlayed
       this.checkWinner()
     }
     this.turnState = TurnState.MovingRobber
@@ -633,6 +641,21 @@ export class Game implements Loggable {
     // return the completed, valid action.
     return action
   }
+
+  // Getter methods.
+
+  public getTurn = () => this.turn
+  public getLastRoll = () => this.lastRoll
+  public getTradeOffers = () => this.tradeOffers
+  public getPhase = () => this.phase
+  public getWinner = () => this.winner
+  public getTurnState = () => this.turnState
+  public getFreeRoads = () => this.freeRoads
+  public getMustDiscard = () => this.mustDiscard
+  public getHasRolled = () => this.hasRolled
+  public getTile = (t: number) => this.board.tiles[t]
+  public getNode = (n: number) => this.board.nodes[n]
+  public getRoad = (n0: number, n1: number) => this.board.getRoad(n0, n1)
 
   toLog = () => {
     let o = ''
