@@ -1,4 +1,5 @@
 import { NUM_PLAYERS } from './constants'
+import Loggable from './loggable'
 import ResourceBundle from './resource/resource_bundle'
 
 export enum TradeStatus {
@@ -7,7 +8,7 @@ export enum TradeStatus {
   Decline,
 }
 
-export class TradeOffer {
+export class TradeOffer implements Loggable {
   /** Unique number for the trade offer */
   readonly id: number
   /** Player number who is making the offer. */
@@ -30,6 +31,15 @@ export class TradeOffer {
 
   public allDeclined = () =>
     this.status.filter((e) => e === TradeStatus.Decline).length === NUM_PLAYERS - 1
+
+  toLog = () =>
+    `{\nid: ${this.id}, offerer: ${this.offerer}\nstatus: ${this.status
+      .map((elt) => {
+        if (elt === TradeStatus.Accept) return 'Accept'
+        else if (elt === TradeStatus.Decline) return 'Decline'
+        return 'Pending'
+      })
+      .join(', ')}\noffer: [ ${this.offer.toLog()} ] request: [ ${this.request.toLog()} ]\n}`
 }
 
 export default TradeOffer

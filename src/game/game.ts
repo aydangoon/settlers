@@ -199,7 +199,12 @@ export class Game implements Loggable {
     const { node } = action.payload as BuildSettlementPayload
     if (this.phase === GamePhase.Playing) {
       this.board.nodes[node].buildSettlement(this.turn)
-      this.currPlayer().resources.subtract(ResourceBundle.settlementCost)
+      ResourceBundle.trade(
+        this.currPlayer().resources,
+        ResourceBundle.settlementCost,
+        this.bank,
+        new ResourceBundle()
+      )
 
       // If you don't own the longest road, we need to check if your built settlement
       // disrupted who has the longest road.
@@ -218,7 +223,10 @@ export class Game implements Loggable {
       if (this.phase === GamePhase.SetupBackward) {
         this.board.tiles
           .filter(({ nodes }) => nodes.includes(node))
-          .forEach(({ resource }) => this.currPlayer().resources.add(resource, 1))
+          .forEach(({ resource }) => {
+            this.currPlayer().resources.add(resource, 1)
+            this.bank.subtract(resource, 1)
+          })
       }
       this.turnState = TurnState.SetupRoad
     }
@@ -241,7 +249,12 @@ export class Game implements Loggable {
     if (this.phase === GamePhase.Playing) {
       this.board.buildRoad(node0, node1, this.turn)
       if (this.freeRoads === 0) {
-        this.currPlayer().resources.subtract(ResourceBundle.roadCost)
+        ResourceBundle.trade(
+          this.currPlayer().resources,
+          ResourceBundle.roadCost,
+          this.bank,
+          new ResourceBundle()
+        )
       } else {
         this.freeRoads--
       }
@@ -281,7 +294,12 @@ export class Game implements Loggable {
   private do_buildCity(action: Action) {
     const { node } = action.payload as BuildCityPayload
     this.board.nodes[node].buildCity()
-    this.currPlayer().resources.subtract(ResourceBundle.cityCost)
+    ResourceBundle.trade(
+      this.currPlayer().resources,
+      ResourceBundle.cityCost,
+      this.bank,
+      new ResourceBundle()
+    )
     this.currPlayer().victoryPoints++
     this.currPlayer().cities--
     this.checkWinner()
@@ -470,29 +488,7 @@ export class Game implements Loggable {
     }
   }
 
-  // ============================ Public Interface ============================
-
-  /**
-   * Check if an action is valid.
-   * @param action The action requested to be done
-   * @returns Boolean indicating if the action is valid.
-   */
-  public isValidAction(action: Action): boolean {
-    // Is this action restricted only to the player of the current turn?
-    if (
-      action.player != this.turn &&
-      (this.turnState === TurnState.Preroll ||
-        ![ActionType.Discard, ActionType.MakeTradeOffer, ActionType.DecideOnTradeOffer].includes(
-          action.type
-        ))
-    ) {
-      return false
-    }
-    // Is the requested action an acceptable transition given
-    // the current `turnState`?
-    if (!isValidTransition(this.turnState, action)) return false
-    // So if the action is correct given the `player` and it is correct given
-    // the state of the turn, is it valid given the rest of the game's state?
+  private verifyActionWithState(action: Action): boolean {
     const { type, payload, player } = action
     if (type === ActionType.Roll) {
       const { value } = payload as RollPayload
@@ -578,6 +574,36 @@ export class Game implements Loggable {
     return true
   }
 
+  // ============================ Public Interface ============================
+
+  /**
+   * Check if an action is valid.
+   * @param action The action requested to be done
+   * @returns Boolean indicating if the action is valid.
+   */
+  public isValidAction(action: Action): { valid: boolean; status: string } {
+    // Is this action restricted only to the player of the current turn?
+    if (
+      action.player != this.turn &&
+      (this.turnState === TurnState.Preroll ||
+        ![ActionType.Discard, ActionType.MakeTradeOffer, ActionType.DecideOnTradeOffer].includes(
+          action.type
+        ))
+    ) {
+      return { valid: false, status: 'Restricted action.' }
+    }
+    // Is the requested action an acceptable transition given
+    // the current `turnState`?
+    if (!isValidTransition(this.turnState, action)) {
+      return { valid: false, status: 'Invalid transition.' }
+    }
+
+    // So if the action is correct given the `player` and it is correct given
+    // the state of the turn, is it valid given the rest of the game's state?
+    const valid = this.verifyActionWithState(action)
+    return { valid, status: valid ? 'works!' : 'Violates game state.' }
+  }
+
   /**
    * (1) Check if an action is valid, (2) make action deterministic (edge cases),
    * then (3) do the action.
@@ -586,7 +612,11 @@ export class Game implements Loggable {
    */
   public handleAction(action: Action): null | Action {
     // Determine if the action can be done given current game state.
-    if (!this.isValidAction(action)) return null
+    const { valid, status } = this.isValidAction(action)
+    if (!valid) {
+      console.log(status)
+      return null
+    }
     // The two edge cases where we need to update our action's payload due
     // to randomness
     if (action.type === ActionType.Roll) {
@@ -619,6 +649,8 @@ export class Game implements Loggable {
       '\n'
     o += 'Players: \n'
     for (let i = 0; i < NUM_PLAYERS; i++) o += this.players[i].toLog() + '\n'
+    o += 'Trade Offers: \n'
+    for (let i = 0; i < this.tradeOffers.length; i++) o += this.tradeOffers[i].toLog() + '\n'
     o += 'Bank: ' + this.bank.toLog() + '\n'
     o += 'Deck: ' + this.deck.toLog() + '\n'
     o += 'Largest Army: ' + JSON.stringify(this.largestArmy) + '\n'

@@ -1,9 +1,13 @@
 var readline = require('readline')
 import Action, { ActionType, actionTypeStr } from './game/action'
-import Game from './game/game'
+import Game, { GamePhase } from './game/game'
 import ResourceBundle from './game/resource/resource_bundle'
+import { TurnState } from './game/turn_fsm'
 
 const game = new Game()
+const a = game as any
+a.phase = GamePhase.Playing
+a.turnState = TurnState.Preroll
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -18,8 +22,8 @@ const parseAction = (line: string): Action => {
       return new Action(type, game.turn, { offer: args[1], request: args[2] })
     case ActionType.MakeTradeOffer:
       return new Action(type, game.turn, {
-        offer: new ResourceBundle(args.slice(1, 6).map(parseInt)),
-        request: new ResourceBundle(args.slice(6).map(parseInt)),
+        offer: new ResourceBundle(args.slice(1, 6).map((elt) => parseInt(elt))),
+        request: new ResourceBundle(args.slice(6).map((elt) => parseInt(elt))),
       })
     case ActionType.DecideOnTradeOffer:
       return new Action(type, game.turn, {

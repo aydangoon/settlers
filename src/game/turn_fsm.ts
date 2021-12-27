@@ -41,6 +41,7 @@ export const isValidTransition = (state: TurnState, action: Action) => {
           ActionType.PlayMonopoly,
           ActionType.PlayRobber,
           ActionType.PlayYearOfPlenty,
+          ActionType.PlayRoadBuilder,
           ActionType.Roll,
         ]
       case TurnState.MovingRobber:
@@ -54,7 +55,23 @@ export const isValidTransition = (state: TurnState, action: Action) => {
       case TurnState.Discarding:
         return [ActionType.Discard]
       default:
-        return [ActionType.EndTurn]
+        // Post roll.
+        return [
+          // Trade.
+          ActionType.MakeTradeOffer,
+          ActionType.DecideOnTradeOffer,
+          ActionType.Exchange,
+          // Play dev cards.
+          ActionType.PlayMonopoly,
+          ActionType.PlayRobber,
+          ActionType.PlayYearOfPlenty,
+          ActionType.PlayRoadBuilder,
+          ActionType.EndTurn,
+          // Build things.
+          ActionType.BuildCity,
+          ActionType.BuildRoad,
+          ActionType.BuildSettlement,
+        ]
     }
   })()
   return validActions.includes(action.type)

@@ -6,7 +6,7 @@
 export const NUM_RESOURCE_TYPES: number = 5
 export const NUM_EACH_RESOURCE_TILE: number[] = [3, 4, 3, 4, 4]
 export const NUM_DEV_CARD_TYPES: number = 5
-export const NUM_PLAYERS: number = 4
+export const NUM_PLAYERS: number = 2
 export const NUM_SETTLEMENTS: number = 5
 export const NUM_CITIES: number = 4
 export const NUM_ROADS: number = 15
