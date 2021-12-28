@@ -93,3 +93,11 @@ describe('setup phases', () => {
     strictEqual(a.phase, GamePhase.Playing)
   })
 })
+
+describe('setup space 20', () => {
+  it('huh', () => {
+    const g: Game = new Game()
+    const a = g.handleAction(new Action(ActionType.BuildSettlement, 0, { node: 19 }))
+    notStrictEqual(a, null)
+  })
+})

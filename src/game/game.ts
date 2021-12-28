@@ -525,7 +525,7 @@ export class Game implements Loggable {
       const node: number = (<BuildSettlementPayload>payload).node
       return (
         node > -1 &&
-        node < NUM_TILES &&
+        node < NUM_NODES &&
         this.board.nodes[node].isEmpty() &&
         this.board.adjacentTo(node).find((other) => !this.board.nodes[other].isEmpty()) ===
           undefined &&
@@ -536,7 +536,7 @@ export class Game implements Loggable {
       const node: number = (<BuildCityPayload>payload).node
       return (
         node > -1 &&
-        node < NUM_TILES &&
+        node < NUM_NODES &&
         this.board.nodes[node].getPlayer() === this.turn &&
         !this.board.nodes[node].hasCity() &&
         this.currPlayer().resources.has(ResourceBundle.cityCost)
