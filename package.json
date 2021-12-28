@@ -7,8 +7,8 @@
     "type": "git",
     "url": "https://github.com/aydangoon/settlers.git"
   },
-  "main": "./dist/settlers.js",
-  "types": "./dist/settlers.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "cli": "node ./build/src/cli.js",
     "start": "npm run build && node build/src/index.js",
@@ -17,7 +17,7 @@
     "coverage": "nyc npm run test",
     "build": "rm -rf ./build/ && tsc",
     "docs": "typedoc && open doc/index.html",
-    "dist": "tsc --project ./dist_tsconfig.json"
+    "dist": "rm -rf ./dist/ && tsc --project ./dist_tsconfig.json"
   },
   "author": "aydang",
   "devDependencies": {
