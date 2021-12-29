@@ -90,6 +90,8 @@ export class Game implements Loggable {
   private mustDiscard: boolean[]
   /** Boolean indicating if we have rolled on the current turn yet. */
   private hasRolled: boolean
+  /** Node where the last settlement during setup was built. */
+  private setupLastSettlement: number
   /** [owner, amount] of largest army. */
   readonly largestArmy: { owner: number; size: number }
   /** [owner, length] of longest road */
@@ -114,6 +116,7 @@ export class Game implements Loggable {
     this.phase = GamePhase.SetupForward
     this.winner = -1
     this.lastRoll = -1
+    this.setupLastSettlement = -1
 
     this.turnState = TurnState.SetupSettlement
     this.mustDiscard = [...Array(NUM_PLAYERS)].map(() => false)
@@ -226,6 +229,7 @@ export class Game implements Loggable {
     } else {
       // Setup case. just build the settlement where requested.
       this.board.nodes[node].buildSettlement(this.turn)
+      this.setupLastSettlement = node
       // If this is our second setup phase settlement, collect resources.
       if (this.phase === GamePhase.SetupBackward) {
         this.board.tiles
@@ -550,7 +554,8 @@ export class Game implements Loggable {
       return (
         adj0.includes(node1) && // nodes adjacent and
         this.board.getRoad(node0, node1) === -1 && // no road there yet and
-        (this.phase !== GamePhase.Playing ||
+        ((this.phase !== GamePhase.Playing &&
+          (node1 === this.setupLastSettlement || node0 === this.setupLastSettlement)) ||
           this.currPlayer().resources.has(ResourceBundle.roadCost)) && // can buy a road or its setup
         (this.board.nodes[node0].getPlayer() === this.turn || // settlement on node 0 or
           this.board.nodes[node1].getPlayer() === this.turn || // settlement on node 1 or
