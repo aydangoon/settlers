@@ -540,7 +540,10 @@ export class Game implements Loggable {
         this.board.adjacentTo(node).find((other) => !this.board.nodes[other].isEmpty()) ===
           undefined &&
         (this.phase !== GamePhase.Playing ||
-          this.currPlayer().resources.has(ResourceBundle.settlementCost))
+          (this.currPlayer().resources.has(ResourceBundle.settlementCost) &&
+            this.board
+              .adjacentTo(node)
+              .find((other) => this.board.getRoad(node, other) === this.turn) !== undefined))
       )
     } else if (type === ActionType.BuildCity) {
       const node: number = (<BuildCityPayload>payload).node
