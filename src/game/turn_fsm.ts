@@ -43,6 +43,7 @@ export const isValidTransition = (state: TurnState, action: Action) => {
           ActionType.PlayYearOfPlenty,
           ActionType.PlayRoadBuilder,
           ActionType.Roll,
+          ActionType.BuildRoad, // iff you have free roads.
         ]
       case TurnState.MovingRobber:
         return [ActionType.MoveRobber]

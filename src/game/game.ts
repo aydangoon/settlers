@@ -563,7 +563,7 @@ export class Game implements Loggable {
         ((this.phase !== GamePhase.Playing &&
           (node1 === this.setupLastSettlement || node0 === this.setupLastSettlement)) ||
           this.freeRoads > 0 ||
-          this.currPlayer().resources.has(ResourceBundle.roadCost)) && // can buy a road or its setup
+          (this.hasRolled && this.currPlayer().resources.has(ResourceBundle.roadCost))) && // can buy a road or its setup
         (this.board.nodes[node0].getPlayer() === this.turn || // settlement on node 0 or
           this.board.nodes[node1].getPlayer() === this.turn || // settlement on node 1 or
           adj0.find((onid0) => this.board.getRoad(onid0, node0) === this.turn) !== undefined || // road we own incident on node 0 or
