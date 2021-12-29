@@ -562,6 +562,7 @@ export class Game implements Loggable {
         this.board.getRoad(node0, node1) === -1 && // no road there yet and
         ((this.phase !== GamePhase.Playing &&
           (node1 === this.setupLastSettlement || node0 === this.setupLastSettlement)) ||
+          this.freeRoads > 0 ||
           this.currPlayer().resources.has(ResourceBundle.roadCost)) && // can buy a road or its setup
         (this.board.nodes[node0].getPlayer() === this.turn || // settlement on node 0 or
           this.board.nodes[node1].getPlayer() === this.turn || // settlement on node 1 or
@@ -586,8 +587,8 @@ export class Game implements Loggable {
       const { card } = payload as DrawDevCardPayload
       return (
         !this.deck.isEmpty() &&
-        (card === undefined ||
-          (this.deck.has(card) && this.currPlayer().resources.has(ResourceBundle.devCardCost)))
+        this.currPlayer().resources.has(ResourceBundle.devCardCost) &&
+        (card === undefined || this.deck.has(card))
       )
     } else if (type === ActionType.Exchange) {
       const { offer, request } = payload as ExchangePayload
