@@ -381,7 +381,7 @@ export class Game implements Loggable {
   private do_playRoadBuilder() {
     this.currPlayer().devCards.remove(DevCard.RoadBuilder)
     this.freeRoads = 2
-    this.turnState = this.hasRolled ? TurnState.Preroll : TurnState.Postroll
+    this.turnState = this.hasRolled ? TurnState.Postroll : TurnState.Preroll
   }
 
   private do_discard(action: Action) {
@@ -396,6 +396,12 @@ export class Game implements Loggable {
 
   private do_drawDevCard(action: Action) {
     const { card } = action.payload as DrawDevCardPayload
+    ResourceBundle.trade(
+      ResourceBundle.devCardCost,
+      this.currPlayer().resources,
+      new ResourceBundle(),
+      this.bank
+    )
     this.currPlayer().devCards.add(card)
     this.deck.remove(card)
     if (card === DevCard.VictoryPoint) {
@@ -578,7 +584,11 @@ export class Game implements Loggable {
       return tradeOffer !== undefined // TODO: this logic is incomplete.
     } else if (type === ActionType.DrawDevCard) {
       const { card } = payload as DrawDevCardPayload
-      return !this.deck.isEmpty() && (card === undefined || this.deck.has(card))
+      return (
+        !this.deck.isEmpty() &&
+        (card === undefined ||
+          (this.deck.has(card) && this.currPlayer().resources.has(ResourceBundle.devCardCost)))
+      )
     } else if (type === ActionType.Exchange) {
       const { offer, request } = payload as ExchangePayload
       const rate = this.currPlayer().rates.get(offer)

@@ -67,6 +67,7 @@ export const isValidTransition = (state: TurnState, action: Action) => {
           ActionType.PlayYearOfPlenty,
           ActionType.PlayRoadBuilder,
           ActionType.EndTurn,
+          ActionType.DrawDevCard,
           // Build things.
           ActionType.BuildCity,
           ActionType.BuildRoad,
