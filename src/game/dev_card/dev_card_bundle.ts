@@ -63,6 +63,15 @@ export class DevCardBundle implements Loggable {
   }
 
   /**
+   *
+   * @param devcard The card we want the amount of.
+   * @returns The number of card `devcard` in the bundle.
+   */
+  public get(devcard: DevCard) {
+    return this.bundle[devcard]
+  }
+
+  /**
    * Pick one devcard from the bundle at random.
    * @returns The devcard that was randomly picked.
    */

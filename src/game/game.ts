@@ -207,10 +207,10 @@ export class Game implements Loggable {
     if (this.phase === GamePhase.Playing) {
       this.board.nodes[node].buildSettlement(this.turn)
       ResourceBundle.trade(
-        this.currPlayer().resources,
         ResourceBundle.settlementCost,
-        this.bank,
-        new ResourceBundle()
+        this.currPlayer().resources,
+        new ResourceBundle(),
+        this.bank
       )
 
       // If you don't own the longest road, we need to check if your built settlement
@@ -257,10 +257,10 @@ export class Game implements Loggable {
       this.board.buildRoad(node0, node1, this.turn)
       if (this.freeRoads === 0) {
         ResourceBundle.trade(
-          this.currPlayer().resources,
           ResourceBundle.roadCost,
-          this.bank,
-          new ResourceBundle()
+          this.currPlayer().resources,
+          new ResourceBundle(),
+          this.bank
         )
       } else {
         this.freeRoads--
@@ -302,10 +302,10 @@ export class Game implements Loggable {
     const { node } = action.payload as BuildCityPayload
     this.board.nodes[node].buildCity()
     ResourceBundle.trade(
-      this.currPlayer().resources,
       ResourceBundle.cityCost,
-      this.bank,
-      new ResourceBundle()
+      this.currPlayer().resources,
+      new ResourceBundle(),
+      this.bank
     )
     this.currPlayer().victoryPoints++
     this.currPlayer().cities--
@@ -656,6 +656,7 @@ export class Game implements Loggable {
   public getTile = (t: number) => this.board.tiles[t]
   public getNode = (n: number) => this.board.nodes[n]
   public getRoad = (n0: number, n1: number) => this.board.getRoad(n0, n1)
+  public getRobberTile = () => this.board.robber
 
   toLog = () => {
     let o = ''
