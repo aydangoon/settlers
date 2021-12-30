@@ -372,7 +372,7 @@ export class Game implements Loggable {
   private do_selectYearOfPlentyResources(action: Action) {
     const { resources } = action.payload as SelectYearOfPlentyResourcesPayload
     for (let i = 0; i < 2; i++) {
-      this.currPlayer().resources.add(i as Resource, 1)
+      this.currPlayer().resources.add(resources[i], 1)
       this.bank.subtract(i as Resource, 1)
     }
     this.turnState = this.hasRolled ? TurnState.Postroll : TurnState.Preroll
