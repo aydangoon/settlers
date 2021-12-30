@@ -17,15 +17,15 @@ export enum DevCard {
 export const devCardStr = (c: DevCard) => {
   switch (c) {
     case DevCard.Knight:
-      return 'knight'
+      return 'Knight'
     case DevCard.VictoryPoint:
-      return 'victory point'
+      return 'Victory Point'
     case DevCard.YearOfPlenty:
-      return 'yop'
+      return 'Year of Plenty'
     case DevCard.Monopoly:
-      return 'monopoly'
+      return 'Monopoly'
     default:
-      return 'road builder'
+      return 'Road Builder'
   }
 }
 

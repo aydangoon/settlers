@@ -155,7 +155,11 @@ export class ResourceBundle implements Loggable {
    * @returns The number of resources in the bundle.
    */
   public size() {
-    return this.bundle.reduce((acc, curr) => acc + curr)
+    let sum = 0
+    for (let i = 0; i < NUM_RESOURCE_TYPES; i++) {
+      sum += this.bundle[i]
+    }
+    return sum
   }
 
   /**
