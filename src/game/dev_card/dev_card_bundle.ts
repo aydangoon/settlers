@@ -38,11 +38,25 @@ export class DevCardBundle implements Loggable {
   }
 
   /**
-   * Add a single devcard to the bundle.
-   * @param devcard The dev card to add one of.
+   *
+   * @param bundle The bundle we wish to add to this bundle. It is unchanged.
    */
-  public add(devcard: DevCard) {
-    this.bundle[devcard]++
+  public add(bundle: DevCardBundle): void
+  /**
+   *
+   * @param DevCard The DevCard we with to add one of to this bundle.
+   */
+  public add(DevCard: DevCard): void
+  public add(...args: any[]) {
+    if (typeof args[0] === 'object') {
+      const [bundle] = args as [DevCardBundle]
+      for (let i = 0; i < NUM_DEV_CARD_TYPES; i++) {
+        this.bundle[i] += bundle.get(i)
+      }
+    } else {
+      const [devCard] = args as [DevCard]
+      this.bundle[devCard]++
+    }
   }
 
   /**
@@ -77,6 +91,13 @@ export class DevCardBundle implements Loggable {
    */
   public pickOneAtRandom() {
     return weightedRandom(this.bundle) as DevCard
+  }
+
+  /**
+   * Empties the bundle.
+   */
+  public empty() {
+    this.bundle = [...Array(NUM_DEV_CARD_TYPES)].map(() => 0) as number[]
   }
 
   /**

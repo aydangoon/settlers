@@ -402,7 +402,7 @@ export class Game implements Loggable {
       new ResourceBundle(),
       this.bank
     )
-    this.currPlayer().devCards.add(card)
+    this.currPlayer().purchasedDevCards.add(card)
     this.deck.remove(card)
     if (card === DevCard.VictoryPoint) {
       this.currPlayer().victoryPoints++
@@ -458,6 +458,7 @@ export class Game implements Loggable {
   }
 
   private do_endTurn() {
+    this.currPlayer().transferPurchasedCards()
     this.freeRoads = 0
     this.turn = (this.turn + 1) % NUM_PLAYERS
     this.hasRolled = false
@@ -676,6 +677,7 @@ export class Game implements Loggable {
   public getNode = (n: number) => this.board.nodes[n]
   public getRoad = (n0: number, n1: number) => this.board.getRoad(n0, n1)
   public getRobberTile = () => this.board.robber
+  public getRobberVictims = () => this.board.playersOnRobber().filter((p) => p !== this.turn)
 
   toLog = () => {
     let o = ''

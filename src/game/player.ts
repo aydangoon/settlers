@@ -8,6 +8,8 @@ export class Player implements Loggable {
   readonly resources: ResourceBundle
   /** The rates at which a player can exchange a resource for any with the bank. */
   readonly rates: ResourceBundle
+  /** dev cards purchased on the players turn. These are not immediately usable. */
+  readonly purchasedDevCards: DevCardBundle
   /** The players dev cards. */
   readonly devCards: DevCardBundle
   /** Knights player. */
@@ -24,12 +26,22 @@ export class Player implements Loggable {
   constructor() {
     this.resources = new ResourceBundle()
     this.rates = new ResourceBundle(BANK_RATE)
+    this.purchasedDevCards = new DevCardBundle()
     this.devCards = new DevCardBundle()
     this.knightsPlayed = 0
     this.victoryPoints = 0
     this.cities = NUM_CITIES
     this.settlements = NUM_SETTLEMENTS
     this.roads = NUM_ROADS
+  }
+
+  /**
+   * Transfer all cards in `purchasedDevCards` to `devCards` and clear
+   * `purchasedDevCards`. This makes these cards now usable.
+   */
+  public transferPurchasedCards = () => {
+    this.devCards.add(this.purchasedDevCards)
+    this.purchasedDevCards.empty()
   }
 
   toLog = () =>
