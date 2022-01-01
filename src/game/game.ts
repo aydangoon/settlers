@@ -321,7 +321,7 @@ export class Game implements Loggable {
     this.currPlayer().devCards.remove(DevCard.Knight)
     this.currPlayer().knightsPlayed++
     const { owner, size } = this.largestArmy
-    if (owner !== this.turn && this.currPlayer().knightsPlayed > size) {
+    if (this.currPlayer().knightsPlayed > size) {
       if (owner !== -1) this.players[owner].victoryPoints -= 2
       this.currPlayer().victoryPoints += 2
       this.largestArmy.owner = this.turn
@@ -419,6 +419,7 @@ export class Game implements Loggable {
     this.bank.add(offer, rate)
     this.bank.subtract(request, 1)
     this.currPlayer().resources.add(request, 1)
+    this.currPlayer().resources.subtract(offer, rate)
   }
 
   // Trades
