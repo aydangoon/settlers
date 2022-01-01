@@ -90,6 +90,8 @@ export class Game implements Loggable {
   private mustDiscard: boolean[]
   /** Boolean indicating if we have rolled on the current turn yet. */
   private hasRolled: boolean
+  /** Boolean indicating if a dev card has been played on the current turn. */
+  private hasPlayedDevCard: boolean
   /** Node where the last settlement during setup was built. */
   private setupLastSettlement: number
   /** [owner, amount] of largest army. */
@@ -112,6 +114,7 @@ export class Game implements Loggable {
     this.tradeOffers = []
     this.freeRoads = 0
     this.hasRolled = false
+    this.hasPlayedDevCard = false
 
     this.phase = GamePhase.SetupForward
     this.winner = -1
@@ -326,6 +329,7 @@ export class Game implements Loggable {
       this.checkWinner()
     }
     this.turnState = TurnState.MovingRobber
+    this.hasPlayedDevCard = true
   }
 
   private do_moveRobber(action: Action) {
@@ -348,6 +352,7 @@ export class Game implements Loggable {
   private do_playMonopoly() {
     this.currPlayer().devCards.remove(DevCard.Monopoly)
     this.turnState = TurnState.SelectingMonopolyResource
+    this.hasPlayedDevCard = true
   }
 
   private do_selectMonopolyResource(action: Action) {
@@ -363,6 +368,7 @@ export class Game implements Loggable {
   private do_playYearOfPlenty() {
     this.currPlayer().devCards.remove(DevCard.YearOfPlenty)
     this.turnState = TurnState.SelectingYearOfPlentyResources
+    this.hasPlayedDevCard = true
   }
 
   private do_selectYearOfPlentyResources(action: Action) {
@@ -378,6 +384,7 @@ export class Game implements Loggable {
     this.currPlayer().devCards.remove(DevCard.RoadBuilder)
     this.freeRoads = 2
     this.turnState = this.hasRolled ? TurnState.Postroll : TurnState.Preroll
+    this.hasPlayedDevCard = true
   }
 
   private do_discard(action: Action) {
@@ -458,6 +465,7 @@ export class Game implements Loggable {
     this.freeRoads = 0
     this.turn = (this.turn + 1) % NUM_PLAYERS
     this.hasRolled = false
+    this.hasPlayedDevCard = false
     this.turnState = TurnState.Preroll
     this.tradeOffers = []
   }
@@ -509,7 +517,7 @@ export class Game implements Loggable {
       const { value } = payload as RollPayload
       return value === undefined || (value > 0 && value < 13)
     } else if (type === ActionType.PlayRobber) {
-      return this.currPlayer().devCards.has(DevCard.Knight)
+      return !this.hasPlayedDevCard && this.currPlayer().devCards.has(DevCard.Knight)
     } else if (type === ActionType.MoveRobber) {
       const { to } = payload as MoveRobberPayload
       return to > -1 && to < NUM_TILES && to !== this.board.robber
@@ -520,14 +528,14 @@ export class Game implements Loggable {
       )
       return victim !== -1 && victim !== player && selectable.includes(victim)
     } else if (type === ActionType.PlayMonopoly) {
-      return this.currPlayer().devCards.has(DevCard.Monopoly)
+      return !this.hasPlayedDevCard && this.currPlayer().devCards.has(DevCard.Monopoly)
     } else if (type === ActionType.PlayYearOfPlenty) {
-      return this.currPlayer().devCards.has(DevCard.YearOfPlenty)
+      return !this.hasPlayedDevCard && this.currPlayer().devCards.has(DevCard.YearOfPlenty)
     } else if (type === ActionType.SelectYearOfPlentyResources) {
       const [res1, res2] = (<SelectYearOfPlentyResourcesPayload>payload).resources
       return this.bank.get(res1) > 1 && this.bank.get(res2) > 1
     } else if (type === ActionType.PlayRoadBuilder) {
-      return this.currPlayer().devCards.has(DevCard.RoadBuilder)
+      return !this.hasPlayedDevCard && this.currPlayer().devCards.has(DevCard.RoadBuilder)
     } else if (type === ActionType.BuildSettlement) {
       const node: number = (<BuildSettlementPayload>payload).node
       return (
