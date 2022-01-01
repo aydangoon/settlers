@@ -270,15 +270,11 @@ export class Game implements Loggable {
         this.freeRoads--
       }
 
-      // If you build a road during play and you don't already have the longest road,
-      // we need check if you now have the longest road.
-      const { owner, len } = this.longestRoad
-      if (owner !== this.turn) {
-        const myLength = this.board.getLongestRoad(this.turn)
-        if (myLength > len) {
-          this.transferLongestRoad(this.turn, myLength)
-          this.checkWinner()
-        }
+      // Check if longest road needs to be updated.
+      const myLength = this.board.getLongestRoad(this.turn)
+      if (myLength > this.longestRoad.len) {
+        this.transferLongestRoad(this.turn, myLength)
+        this.checkWinner()
       }
     } else {
       // Setup case. just build the road where requested.
