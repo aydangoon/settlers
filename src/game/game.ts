@@ -291,6 +291,7 @@ export class Game implements Loggable {
           this.phase = GamePhase.SetupBackward
         } else {
           this.turn++
+          this.currPlayer = this.players[this.turn]
         }
         this.turnState = TurnState.SetupSettlement
       } else {
@@ -299,6 +300,7 @@ export class Game implements Loggable {
           this.turnState = TurnState.Preroll
         } else {
           this.turn--
+          this.currPlayer = this.players[this.turn]
           this.turnState = TurnState.SetupSettlement
         }
       }
