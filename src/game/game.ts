@@ -528,10 +528,13 @@ export class Game implements Loggable {
       return to > -1 && to < NUM_TILES && to !== this.board.robber
     } else if (type === ActionType.Rob) {
       const { victim } = payload as RobPayload
-      const selectable = this.board.tiles[this.board.robber].nodes.map((nid) =>
-        this.board.nodes[nid].getPlayer()
+      const selectable = this.board.playersOnRobber()
+      return (
+        victim !== -1 &&
+        victim !== player &&
+        selectable.includes(victim) &&
+        this.players[victim].resources.size() > 0
       )
-      return victim !== -1 && victim !== player && selectable.includes(victim)
     } else if (type === ActionType.PlayMonopoly) {
       return !this.hasPlayedDevCard && this.currPlayer().devCards.has(DevCard.Monopoly)
     } else if (type === ActionType.PlayYearOfPlenty) {
@@ -703,7 +706,10 @@ export class Game implements Loggable {
   public getNode = (n: number) => this.board.nodes[n]
   public getRoad = (n0: number, n1: number) => this.board.getRoad(n0, n1)
   public getRobberTile = () => this.board.robber
-  public getRobberVictims = () => this.board.playersOnRobber().filter((p) => p !== this.turn)
+  public getRobberVictims = () =>
+    this.board
+      .playersOnRobber()
+      .filter((p) => p !== this.turn && this.players[p].resources.size() > 0)
 
   toLog = () => {
     let o = ''
