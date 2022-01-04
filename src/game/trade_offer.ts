@@ -7,7 +7,6 @@ export enum TradeStatus {
   Accept,
   Decline,
 }
-
 export class TradeOffer implements Loggable {
   /** Unique number for the trade offer */
   readonly id: number
@@ -18,28 +17,52 @@ export class TradeOffer implements Loggable {
   /** What is requested in return. */
   readonly request: ResourceBundle
   /** How each player number views the trade. */
-  readonly status: TradeStatus[]
+  readonly status: {
+    [key: number]: TradeStatus
+  }
+  /** Declines needed to automatically close the trade */
+  private maxDeclines: number
 
-  constructor(id: number, offerer: number, offer: ResourceBundle, request: ResourceBundle) {
+  constructor(
+    id: number,
+    host: number,
+    offerer: number,
+    offer: ResourceBundle,
+    request: ResourceBundle
+  ) {
+    const isHost = host === offerer
     this.id = id
     this.offerer = offerer
     this.offer = offer
     this.request = request
-    this.status = [...Array(NUM_PLAYERS)].map(() => TradeStatus.Pending)
-    this.status[offerer] = TradeStatus.Accept
+    this.maxDeclines = isHost ? NUM_PLAYERS - 1 : 1
+    if (!isHost) {
+      this.status = { [host]: TradeStatus.Pending }
+    } else {
+      this.status = {}
+      for (let i = 0; i < NUM_PLAYERS; i++) {
+        if (i === host) continue
+        this.status[i] = TradeStatus.Pending
+      }
+    }
   }
 
-  public allDeclined = () =>
-    this.status.filter((e) => e === TradeStatus.Decline).length === NUM_PLAYERS - 1
+  public allDeclined = () => {
+    let count = 0
+    for (let status in this.status) {
+      if (this.status[status] === TradeStatus.Decline) count++
+    }
+    return count === this.maxDeclines
+  }
 
-  toLog = () =>
-    `{\nid: ${this.id}, offerer: ${this.offerer}\nstatus: ${this.status
-      .map((elt) => {
-        if (elt === TradeStatus.Accept) return 'Accept'
-        else if (elt === TradeStatus.Decline) return 'Decline'
-        return 'Pending'
-      })
-      .join(', ')}\noffer: [ ${this.offer.toLog()} ] request: [ ${this.request.toLog()} ]\n}`
+  toLog = () => ''
+  // `{\nid: ${this.id}, offerer: ${this.offerer}\nstatus: ${this.status
+  //   .map((elt) => {
+  //     if (elt === TradeStatus.Accept) return 'Accept'
+  //     else if (elt === TradeStatus.Decline) return 'Decline'
+  //     return 'Pending'
+  //   })
+  //   .join(', ')}\noffer: [ ${this.offer.toLog()} ] request: [ ${this.request.toLog()} ]\n}`
 }
 
 export default TradeOffer

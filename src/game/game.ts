@@ -98,6 +98,8 @@ export class Game implements Loggable {
   readonly largestArmy: { owner: number; size: number }
   /** [owner, length] of longest road */
   readonly longestRoad: { owner: number; len: number }
+  /** A bundle of dev cards bought on the current turn. */
+  readonly purchasedCards: DevCardBundle
 
   constructor() {
     this.bank = new ResourceBundle(NUM_EACH_RESOURCE)
@@ -115,6 +117,7 @@ export class Game implements Loggable {
     this.freeRoads = 0
     this.hasRolled = false
     this.hasPlayedDevCard = false
+    this.purchasedCards = new DevCardBundle()
 
     this.phase = GamePhase.SetupForward
     this.winner = -1
@@ -405,7 +408,7 @@ export class Game implements Loggable {
       new ResourceBundle(),
       this.bank
     )
-    this.currPlayer().purchasedDevCards.add(card)
+    this.purchasedCards.add(card)
     this.deck.remove(card)
     if (card === DevCard.VictoryPoint) {
       this.currPlayer().victoryPoints++
@@ -428,7 +431,7 @@ export class Game implements Loggable {
     const { offer, request } = action.payload as MakeTradeOfferPayload
     const id =
       this.tradeOffers.length > 0 ? this.tradeOffers[this.tradeOffers.length - 1].id + 1 : 0
-    this.tradeOffers.push(new TradeOffer(id, action.player, offer, request))
+    this.tradeOffers.push(new TradeOffer(id, this.turn, action.player, offer, request))
   }
 
   private do_decideOnTradeOffer(action: Action) {
@@ -462,7 +465,8 @@ export class Game implements Loggable {
   }
 
   private do_endTurn() {
-    this.currPlayer().transferPurchasedCards()
+    this.currPlayer().devCards.add(this.purchasedCards)
+    this.purchasedCards.empty()
     this.freeRoads = 0
     this.turn = (this.turn + 1) % NUM_PLAYERS
     this.hasRolled = false
@@ -590,8 +594,25 @@ export class Game implements Loggable {
       return this.players[player].resources.has(offer)
     } else if (type === ActionType.DecideOnTradeOffer) {
       const { status, id, withPlayer } = payload as TradeOfferDecisionPayload
-      const tradeOffer = this.tradeOffers.find((offer) => offer.id === id)
-      return tradeOffer !== undefined // TODO: this logic is incomplete.
+      const to = this.tradeOffers.find((offer) => offer.id === id)
+      if (to === undefined) return false
+      const isOwner = action.player === to.offerer
+      if (isOwner) {
+        return (
+          status === TradeStatus.Decline || // closing the trade offer you own OR
+          (withPlayer !== undefined && // Accepting a trade with someone else where
+            withPlayer !== to.offerer && // you both have the correct resources and they accepted
+            to.status[withPlayer] === TradeStatus.Accept &&
+            this.players[withPlayer].resources.has(to.request) &&
+            this.players[to.offerer].resources.has(to.offer))
+        )
+      } else {
+        // You can only accept if you have the resources.
+        return (
+          to.status[action.player] !== undefined && // you are in the trade offer AND
+          (status !== TradeStatus.Accept || this.players[action.player].resources.has(to.request))
+        )
+      }
     } else if (type === ActionType.DrawDevCard) {
       const { card } = payload as DrawDevCardPayload
       return (
