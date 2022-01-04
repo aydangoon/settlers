@@ -338,7 +338,7 @@ export class Game implements Loggable {
   private do_moveRobber(action: Action) {
     const { to } = action.payload as MoveRobberPayload
     this.board.robber = to
-    if (this.board.playersOnRobber().find((p) => p !== this.turn) !== undefined) {
+    if (this.getRobberVictims().length > 0) {
       this.turnState = TurnState.Robbing
     } else {
       this.turnState = this.hasRolled ? TurnState.Postroll : TurnState.Preroll
