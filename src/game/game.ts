@@ -72,6 +72,8 @@ export class Game implements Loggable {
   private readonly board: Board
   /** The current turn number takes on a value of: [0, NUM_PLAYERS] */
   private turn: number
+  /** Convenience var to get the player obj of the current turn. */
+  private currPlayer: Player
   /** The last roll */
   private lastRoll: number
   /** List of player objects. Indexable by player number. */
@@ -113,6 +115,7 @@ export class Game implements Loggable {
     this.board = new Board()
     this.turn = 0
     this.players = [...Array(NUM_PLAYERS)].map(() => new Player())
+    this.currPlayer = this.players[this.turn]
     this.tradeOffers = []
     this.freeRoads = 0
     this.hasRolled = false
@@ -146,8 +149,6 @@ export class Game implements Loggable {
       }
     }
   }
-
-  private currPlayer = () => this.players[this.turn]
 
   // ============================ do_ helper methods ============================
 
@@ -217,7 +218,7 @@ export class Game implements Loggable {
       this.board.nodes[node].buildSettlement(this.turn)
       ResourceBundle.trade(
         ResourceBundle.settlementCost,
-        this.currPlayer().resources,
+        this.currPlayer.resources,
         new ResourceBundle(),
         this.bank
       )
@@ -241,7 +242,7 @@ export class Game implements Loggable {
         this.board.tiles
           .filter(({ nodes }) => nodes.includes(node))
           .forEach(({ resource }) => {
-            this.currPlayer().resources.add(resource, 1)
+            this.currPlayer.resources.add(resource, 1)
             this.bank.subtract(resource, 1)
           })
       }
@@ -250,25 +251,25 @@ export class Game implements Loggable {
     // Post processing.
     const port = this.board.nodes[node].getPort()
     if (port !== null) {
-      const prevRates = this.currPlayer().rates
+      const prevRates = this.currPlayer.rates
       for (let i = 0; i < port.resources.length; i++) {
         const res = port.resources[i] as Resource
         prevRates.set(res, Math.min(prevRates.get(res), port.rate))
       }
     }
-    this.currPlayer().victoryPoints++
-    this.currPlayer().settlements--
+    this.currPlayer.victoryPoints++
+    this.currPlayer.settlements--
   }
 
   private do_buildRoad(action: Action) {
     const { node0, node1 } = action.payload as BuildRoadPayload
-    this.currPlayer().roads--
+    this.currPlayer.roads--
     if (this.phase === GamePhase.Playing) {
       this.board.buildRoad(node0, node1, this.turn)
       if (this.freeRoads === 0) {
         ResourceBundle.trade(
           ResourceBundle.roadCost,
-          this.currPlayer().resources,
+          this.currPlayer.resources,
           new ResourceBundle(),
           this.bank
         )
@@ -309,26 +310,26 @@ export class Game implements Loggable {
     this.board.nodes[node].buildCity()
     ResourceBundle.trade(
       ResourceBundle.cityCost,
-      this.currPlayer().resources,
+      this.currPlayer.resources,
       new ResourceBundle(),
       this.bank
     )
-    this.currPlayer().victoryPoints++
-    this.currPlayer().cities--
+    this.currPlayer.victoryPoints++
+    this.currPlayer.cities--
     this.checkWinner()
   }
 
   // Play dev cards.
 
   private do_playRobber() {
-    this.currPlayer().devCards.remove(DevCard.Knight)
-    this.currPlayer().knightsPlayed++
+    this.currPlayer.devCards.remove(DevCard.Knight)
+    this.currPlayer.knightsPlayed++
     const { owner, size } = this.largestArmy
-    if (this.currPlayer().knightsPlayed > size) {
+    if (this.currPlayer.knightsPlayed > size) {
       if (owner !== -1) this.players[owner].victoryPoints -= 2
-      this.currPlayer().victoryPoints += 2
+      this.currPlayer.victoryPoints += 2
       this.largestArmy.owner = this.turn
-      this.largestArmy.size = this.currPlayer().knightsPlayed
+      this.largestArmy.size = this.currPlayer.knightsPlayed
       this.checkWinner()
     }
     this.turnState = TurnState.MovingRobber
@@ -348,12 +349,12 @@ export class Game implements Loggable {
   private do_Rob(action: Action) {
     const { victim } = action.payload as RobPayload
     const res: Resource = this.players[victim].resources.removeOneAtRandom()
-    this.currPlayer().resources.add(res, 1)
+    this.currPlayer.resources.add(res, 1)
     this.turnState = this.hasRolled ? TurnState.Postroll : TurnState.Preroll
   }
 
   private do_playMonopoly() {
-    this.currPlayer().devCards.remove(DevCard.Monopoly)
+    this.currPlayer.devCards.remove(DevCard.Monopoly)
     this.turnState = TurnState.SelectingMonopolyResource
     this.hasPlayedDevCard = true
   }
@@ -363,13 +364,13 @@ export class Game implements Loggable {
     for (let i = 0; i < NUM_PLAYERS; i++) {
       if (i === this.turn) continue
       const amnt = this.players[i].resources.removeAll(resource)
-      this.currPlayer().resources.add(resource, amnt)
+      this.currPlayer.resources.add(resource, amnt)
     }
     this.turnState = this.hasRolled ? TurnState.Postroll : TurnState.Preroll
   }
 
   private do_playYearOfPlenty() {
-    this.currPlayer().devCards.remove(DevCard.YearOfPlenty)
+    this.currPlayer.devCards.remove(DevCard.YearOfPlenty)
     this.turnState = TurnState.SelectingYearOfPlentyResources
     this.hasPlayedDevCard = true
   }
@@ -377,14 +378,14 @@ export class Game implements Loggable {
   private do_selectYearOfPlentyResources(action: Action) {
     const { resources } = action.payload as SelectYearOfPlentyResourcesPayload
     for (let i = 0; i < 2; i++) {
-      this.currPlayer().resources.add(resources[i], 1)
+      this.currPlayer.resources.add(resources[i], 1)
       this.bank.subtract(i as Resource, 1)
     }
     this.turnState = this.hasRolled ? TurnState.Postroll : TurnState.Preroll
   }
 
   private do_playRoadBuilder() {
-    this.currPlayer().devCards.remove(DevCard.RoadBuilder)
+    this.currPlayer.devCards.remove(DevCard.RoadBuilder)
     this.freeRoads = 2
     this.turnState = this.hasRolled ? TurnState.Postroll : TurnState.Preroll
     this.hasPlayedDevCard = true
@@ -404,25 +405,25 @@ export class Game implements Loggable {
     const { card } = action.payload as DrawDevCardPayload
     ResourceBundle.trade(
       ResourceBundle.devCardCost,
-      this.currPlayer().resources,
+      this.currPlayer.resources,
       new ResourceBundle(),
       this.bank
     )
     this.purchasedCards.add(card)
     this.deck.remove(card)
     if (card === DevCard.VictoryPoint) {
-      this.currPlayer().victoryPoints++
+      this.currPlayer.victoryPoints++
       this.checkWinner()
     }
   }
 
   private do_exchange(action: Action) {
     const { offer, request } = action.payload as ExchangePayload
-    const rate = this.currPlayer().rates.get(offer)
+    const rate = this.currPlayer.rates.get(offer)
     this.bank.add(offer, rate)
     this.bank.subtract(request, 1)
-    this.currPlayer().resources.add(request, 1)
-    this.currPlayer().resources.subtract(offer, rate)
+    this.currPlayer.resources.add(request, 1)
+    this.currPlayer.resources.subtract(offer, rate)
   }
 
   // Trades
@@ -465,10 +466,11 @@ export class Game implements Loggable {
   }
 
   private do_endTurn() {
-    this.currPlayer().devCards.add(this.purchasedCards)
+    this.currPlayer.devCards.add(this.purchasedCards)
     this.purchasedCards.empty()
     this.freeRoads = 0
     this.turn = (this.turn + 1) % NUM_PLAYERS
+    this.currPlayer = this.players[this.turn]
     this.hasRolled = false
     this.hasPlayedDevCard = false
     this.turnState = TurnState.Preroll
@@ -522,7 +524,7 @@ export class Game implements Loggable {
       const { value } = payload as RollPayload
       return value === undefined || (value > 0 && value < 13)
     } else if (type === ActionType.PlayRobber) {
-      return !this.hasPlayedDevCard && this.currPlayer().devCards.has(DevCard.Knight)
+      return !this.hasPlayedDevCard && this.currPlayer.devCards.has(DevCard.Knight)
     } else if (type === ActionType.MoveRobber) {
       const { to } = payload as MoveRobberPayload
       return to > -1 && to < NUM_TILES && to !== this.board.robber
@@ -536,27 +538,26 @@ export class Game implements Loggable {
         this.players[victim].resources.size() > 0
       )
     } else if (type === ActionType.PlayMonopoly) {
-      return !this.hasPlayedDevCard && this.currPlayer().devCards.has(DevCard.Monopoly)
+      return !this.hasPlayedDevCard && this.currPlayer.devCards.has(DevCard.Monopoly)
     } else if (type === ActionType.PlayYearOfPlenty) {
-      return !this.hasPlayedDevCard && this.currPlayer().devCards.has(DevCard.YearOfPlenty)
+      return !this.hasPlayedDevCard && this.currPlayer.devCards.has(DevCard.YearOfPlenty)
     } else if (type === ActionType.SelectYearOfPlentyResources) {
       const [res1, res2] = (<SelectYearOfPlentyResourcesPayload>payload).resources
       return this.bank.get(res1) > 1 && this.bank.get(res2) > 1
     } else if (type === ActionType.PlayRoadBuilder) {
-      return !this.hasPlayedDevCard && this.currPlayer().devCards.has(DevCard.RoadBuilder)
+      return !this.hasPlayedDevCard && this.currPlayer.devCards.has(DevCard.RoadBuilder)
     } else if (type === ActionType.BuildSettlement) {
       const node: number = (<BuildSettlementPayload>payload).node
       return (
         node > -1 &&
         node < NUM_NODES &&
         this.board.nodes[node].isEmpty() &&
-        this.board.adjacentTo(node).find((other) => !this.board.nodes[other].isEmpty()) ===
-          undefined &&
+        !this.board.adjacentTo(node).some((other) => !this.board.nodes[other].isEmpty()) &&
         (this.phase !== GamePhase.Playing ||
-          (this.currPlayer().resources.has(ResourceBundle.settlementCost) &&
+          (this.currPlayer.resources.has(ResourceBundle.settlementCost) &&
             this.board
               .adjacentTo(node)
-              .find((other) => this.board.getRoad(node, other) === this.turn) !== undefined))
+              .some((other) => this.board.getRoad(node, other) === this.turn)))
       )
     } else if (type === ActionType.BuildCity) {
       const node: number = (<BuildCityPayload>payload).node
@@ -565,7 +566,7 @@ export class Game implements Loggable {
         node < NUM_NODES &&
         this.board.nodes[node].getPlayer() === this.turn &&
         !this.board.nodes[node].hasCity() &&
-        this.currPlayer().resources.has(ResourceBundle.cityCost)
+        this.currPlayer.resources.has(ResourceBundle.cityCost)
       )
     } else if (type === ActionType.BuildRoad) {
       const { node0, node1 } = <BuildRoadPayload>payload
@@ -579,11 +580,11 @@ export class Game implements Loggable {
         ((this.phase !== GamePhase.Playing &&
           (node1 === this.setupLastSettlement || node0 === this.setupLastSettlement)) ||
           this.freeRoads > 0 ||
-          (this.hasRolled && this.currPlayer().resources.has(ResourceBundle.roadCost))) && // can buy a road or its setup
+          (this.hasRolled && this.currPlayer.resources.has(ResourceBundle.roadCost))) && // can buy a road or its setup
         (this.board.nodes[node0].getPlayer() === this.turn || // settlement on node 0 or
           this.board.nodes[node1].getPlayer() === this.turn || // settlement on node 1 or
-          adj0.find((onid0) => this.board.getRoad(onid0, node0) === this.turn) !== undefined || // road we own incident on node 0 or
-          adj1.find((onid1) => this.board.getRoad(onid1, node1) === this.turn) !== undefined) // road we own incident on node 1
+          adj0.some((onid0) => this.board.getRoad(onid0, node0) === this.turn) || // road we own incident on node 0 or
+          adj1.some((onid1) => this.board.getRoad(onid1, node1) === this.turn)) // road we own incident on node 1
       )
     } else if (type === ActionType.Discard) {
       const { bundle } = payload as DiscardPayload
@@ -620,13 +621,13 @@ export class Game implements Loggable {
       const { card } = payload as DrawDevCardPayload
       return (
         !this.deck.isEmpty() &&
-        this.currPlayer().resources.has(ResourceBundle.devCardCost) &&
+        this.currPlayer.resources.has(ResourceBundle.devCardCost) &&
         (card === undefined || this.deck.has(card))
       )
     } else if (type === ActionType.Exchange) {
       const { offer, request } = payload as ExchangePayload
-      const rate = this.currPlayer().rates.get(offer)
-      return this.currPlayer().resources.get(offer) >= rate && this.bank.get(request) > 1
+      const rate = this.currPlayer.rates.get(offer)
+      return this.currPlayer.resources.get(offer) >= rate && this.bank.get(request) > 1
     }
     return true
   }
@@ -639,6 +640,9 @@ export class Game implements Loggable {
    * @returns Boolean indicating if the action is valid.
    */
   public isValidAction(action: Action): { valid: boolean; status: string } {
+    // Has someone already won?
+    if (this.phase === GamePhase.Finished) return { valid: false, status: 'The game is over.' }
+
     // Is this action restricted only to the player of the current turn?
     if (
       action.player != this.turn &&
