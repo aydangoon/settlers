@@ -1,6 +1,6 @@
 # What is this package?
 
-The core logic for a Settlers game instance.
+Browser-based headless implementation for the game Settler's of Catan
 
 # Project structure
 
